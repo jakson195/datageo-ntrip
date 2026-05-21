@@ -3,6 +3,5 @@
   "framework": "nextjs",
   "installCommand": "npm install",
   "buildCommand": "npm run build",
-  "devCommand": "npm run dev -p 3001",
-  "rootDirectory": "app-solodatantrip"
+  "devCommand": "npm run dev -p 3001"
 }
