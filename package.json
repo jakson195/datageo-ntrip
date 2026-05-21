@@ -1,0 +1,10 @@
+{
+  "name": "datageo-ntrip-repo",
+  "private": true,
+  "description": "Monorepo — app Next.js em app-solodatantrip/",
+  "scripts": {
+    "build": "npm run build --prefix app-solodatantrip",
+    "dev": "npm run dev --prefix app-solodatantrip",
+    "install:app": "npm install --prefix app-solodatantrip"
+  }
+}
