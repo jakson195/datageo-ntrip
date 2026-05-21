@@ -48,6 +48,84 @@ body {
     radial-gradient(ellipse 50% 40% at 90% 20%, rgba(59, 158, 255, 0.12), transparent);
 }
 
+@keyframes hero-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes hero-ring-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.03);
+  }
+}
+
+.hero-drone-float {
+  animation: hero-float 5s ease-in-out infinite;
+}
+
+.hero-drone-ring {
+  animation: hero-ring-pulse 4s ease-in-out infinite;
+}
+
+.hero-drone-ring-delay {
+  animation: hero-ring-pulse 4s ease-in-out 1s infinite;
+}
+
+.hero-drone-scan {
+  animation: hero-ring-pulse 6s ease-in-out infinite;
+}
+
+.hero-video-overlay {
+  background:
+    linear-gradient(105deg, rgba(6, 8, 12, 0.92) 0%, rgba(6, 8, 12, 0.72) 42%, rgba(6, 8, 12, 0.35) 68%, rgba(6, 8, 12, 0.55) 100%),
+    linear-gradient(to top, rgba(6, 8, 12, 0.85), transparent 40%);
+}
+
+@keyframes hero-rtk-pulse {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.15;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.45;
+  }
+  100% {
+    transform: scale(0.85);
+    opacity: 0.15;
+  }
+}
+
+.hero-rtk-pulse {
+  animation: hero-rtk-pulse 3.5s ease-in-out infinite;
+  box-shadow: 0 0 60px rgba(0, 194, 168, 0.15);
+}
+
+.hero-rtk-pulse-delay {
+  animation: hero-rtk-pulse 3.5s ease-in-out 0.8s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-video {
+    display: none;
+  }
+  .hero-rtk-pulse,
+  .hero-rtk-pulse-delay {
+    animation: none;
+  }
+}
+
 /* Mapa de cobertura (MapLibre) */
 .sdn-cov .maplibregl-ctrl-logo {
   display: none !important;
@@ -91,4 +169,14 @@ body {
 }
 .sdn-cov .sdn-item:hover {
   background: rgba(0, 194, 168, 0.1);
+}
+
+/* Área do cliente (estilo RTKdata) */
+.rtk-sidebar {
+  background: linear-gradient(180deg, #0c2d5c 0%, #0a2347 100%);
+}
+.rtk-nav-active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-left: 3px solid #3b9eff;
 }

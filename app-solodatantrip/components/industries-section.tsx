@@ -24,7 +24,7 @@ const sectors: Sector[] = [
     id: "agronomia",
     title: "Agronomia",
     headline: "Plantio e pulverização no traço certo",
-    body: "Tratores com GPS/RTK e voos de drone para NDVI, contagem e manejo. Correção em tempo real na lavoura e ortomosaicos para decisão rápida.",
+    body: "Tratores com GPS/RTK e voos de drone com fix em tempo real. Correção NTRIP na lavoura para plantio, pulverização e manejo preciso.",
     tags: ["NTRIP", "Drone"],
     gradient: "from-emerald-950 via-[#0a1a12] to-background",
     pattern: "radial-gradient(circle at 20% 80%, rgba(0,194,168,0.3), transparent 45%)",
@@ -33,7 +33,7 @@ const sectors: Sector[] = [
     id: "obras",
     title: "Obras e infraestrutura",
     headline: "Máquinas e medições no projeto, não no chute",
-    body: "Escavadeiras, motoniveladoras e acompanhamento de obra com posição centimétrica. Ortomosaicos periódicos para volumetria e avanço físico.",
+    body: "Escavadeiras, motoniveladoras e máquinas com posição centimétrica. Acompanhamento de obra e volumetria com GNSS corrigido.",
     tags: ["NTRIP", "Volumetria"],
     gradient: "from-amber-950/80 via-[#1a1408] to-background",
     pattern: "radial-gradient(circle at 70% 60%, rgba(59,158,255,0.2), transparent 50%)",
@@ -41,9 +41,9 @@ const sectors: Sector[] = [
   {
     id: "drone",
     title: "Mapeamento com drone",
-    headline: "Do voo ao ortomosaico em um fluxo",
-    body: "Voos RTK, envio pelo site e entrega de mosaico e pacote de resultados. Ideal para inspeções, cadastro rural e monitoramento de áreas.",
-    tags: ["Drone", "Upload web"],
+    headline: "Voos com fix RTK no ar",
+    body: "Matrice, Phantom RTK e payloads LiDAR com correção NTRIP em tempo real. Ideal para inspeções, cadastro e levantamentos sem base local.",
+    tags: ["Drone", "RTK"],
     gradient: "from-[#0a1830] via-slate-900 to-background",
     pattern: "radial-gradient(circle at 30% 30%, rgba(59,158,255,0.4), transparent 55%)",
   },
@@ -67,7 +67,7 @@ export function IndustriesSection() {
               Aplicações
             </p>
             <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-              Onde NTRIP e processamento fazem diferença
+              Onde a correção NTRIP faz diferença
             </h2>
           </div>
           <p className="max-w-sm text-sm leading-relaxed text-muted">
@@ -119,10 +119,10 @@ export function IndustriesSection() {
             Avaliação gratuita 30 dias
           </Link>
           <Link
-            href="/processamento"
+            href="/cobertura"
             className="text-sm font-medium text-drone underline-offset-4 hover:underline"
           >
-            Processar imagens de drone →
+            Consultar cobertura na sua região →
           </Link>
         </div>
       </div>

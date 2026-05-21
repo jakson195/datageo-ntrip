@@ -13,8 +13,8 @@ type GuideBlock = {
 const blocks: GuideBlock[] = [
   {
     id: "fluxo",
-    title: "Do rover ao ortomosaico",
-    subtitle: "Fluxo em 4 etapas — NTRIP e processamento no mesmo lugar",
+    title: "Do cadastro ao fix RTK",
+    subtitle: "Fluxo em 4 etapas — da ativação ao trabalho em campo",
     accent: "accent",
     icon: (
       <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -32,11 +32,11 @@ const blocks: GuideBlock[] = [
       },
       {
         label: "03",
-        text: "Envie o lote em /processamento — arraste JPG, PNG ou TIFF (sem limite total por envio).",
+        text: "Conecte o rover ou o drone ao caster NTRIP e aguarde o fix RTK antes de iniciar a coleta.",
       },
       {
         label: "04",
-        text: "Baixe o mosaico de pré-visualização e o pacote ZIP; para ortomosaico GeoTIFF/DSM, solicite plano avançado.",
+        text: "Trabalhe com precisão centimétrica; exporte pontos e linhas para CAD/GIS ou grave logs para PPK.",
       },
     ],
   },
@@ -59,7 +59,7 @@ const blocks: GuideBlock[] = [
       },
       {
         label: "Web",
-        text: "Painel de envio de imagens, acompanhamento de job e download de resultados.",
+        text: "Credenciais, mountpoint e status da conexão em um painel simples.",
       },
       {
         label: "Geo",
@@ -78,7 +78,7 @@ const blocks: GuideBlock[] = [
   {
     id: "checklist",
     title: "Checklist antes de começar",
-    subtitle: "Evite retrabalho no campo e no processamento",
+    subtitle: "Evite retrabalho no campo",
     accent: "accent",
     icon: (
       <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -175,10 +175,10 @@ export function ServiceGuideSection() {
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
-            href="/processamento"
+            href="/cobertura"
             className="rounded-full bg-drone px-6 py-3 text-sm font-semibold text-background transition hover:opacity-90"
           >
-            Testar envio de imagens
+            Ver mapa de cobertura
           </Link>
           <Link
             href="#contato"

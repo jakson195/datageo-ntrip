@@ -1,27 +1,16 @@
 import Link from "next/link";
 
-const homeNav = [
+const nav = [
   { href: "/#como-funciona", label: "Como funciona" },
   { href: "/#setores", label: "Setores" },
   { href: "/cobertura", label: "Cobertura" },
   { href: "/#ntrip", label: "NTRIP" },
-  { href: "/#drones", label: "Drones" },
   { href: "/#planos", label: "Planos" },
   { href: "/#faq", label: "FAQ" },
   { href: "/#contato", label: "Contato" },
 ];
 
-const processamentoNav = [
-  { href: "/processamento", label: "Processar imagens" },
-  { href: "/#contato", label: "Contato" },
-];
-
-type SiteHeaderProps = {
-  variant?: "home" | "processamento";
-};
-
-export function SiteHeader({ variant = "home" }: SiteHeaderProps) {
-  const nav = variant === "processamento" ? processamentoNav : homeNav;
+export function SiteHeader() {
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-card-border/80 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
@@ -54,10 +43,16 @@ export function SiteHeader({ variant = "home" }: SiteHeaderProps) {
             WhatsApp
           </Link>
           <Link
-            href={variant === "processamento" ? "/#contato" : "/processamento"}
+            href="/login"
+            className="hidden rounded-full border border-card-border px-4 py-2 text-sm text-muted transition hover:border-accent/40 hover:text-foreground sm:inline-flex"
+          >
+            Área do cliente
+          </Link>
+          <Link
+            href="/#contato"
             className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-background transition hover:bg-accent-dim"
           >
-            {variant === "processamento" ? "Teste grátis" : "Processar drone"}
+            Teste grátis
           </Link>
         </div>
       </div>

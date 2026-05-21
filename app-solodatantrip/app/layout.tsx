@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Datageo Ntrip | NTRIP, RTK e processamento de drone",
+  title: "Datageo Ntrip | NTRIP e correção RTK",
   description:
-    "Rede de correção GNSS (NTRIP/RTK) e processamento de imagens de drone. Site institucional — separado do app de sondagem.",
+    "Rede de correção GNSS (NTRIP/RTK) para drones e receptores. Site institucional Datageo Ntrip.",
 };
 
 export default function RootLayout({
@@ -24,11 +24,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full">{children}</body>
+    <html lang="pt-BR">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
+      >
+        {children}
+      </body>
     </html>
   );
 }
