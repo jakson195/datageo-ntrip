@@ -2,11 +2,25 @@ import type { NextConfig } from "next";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const appDir = path.dirname(fileURLToPath(import.meta.url));
+/** Same as __dirname in next.config.js — pins root to this app (not monorepo parent). */
+const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   turbopack: {
-    root: appDir,
+    root: rootDir,
+  },
+  async headers() {
+    return [
+      {
+        source: "/api/coverage",
+        headers: [{ key: "Cache-Control", value: "no-store, no-cache, must-revalidate" }],
+      },
+      {
+        source: "/api/geocoding/:path*",
+        headers: [{ key: "Cache-Control", value: "no-store, no-cache, must-revalidate" }],
+      },
+    ];
   },
   async redirects() {
     return [
