@@ -1,0 +1,13 @@
+{
+  "buildCommand": "node scripts/ensure-database-env.mjs && prisma generate && next build",
+  "crons": [
+    {
+      "path": "/api/cron/rtk-expiration",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/billing",
+      "schedule": "0 8 * * *"
+    }
+  ]
+}

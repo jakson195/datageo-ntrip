@@ -1,58 +1,76 @@
-import Link from "next/link";
-import { HeroVideoBackground } from "./hero-video-background";
+import { HardNavLink } from "./hard-nav-link";
 
-const highlights = [
+const features = [
+  { code: "RTK", label: "Precisão centimétrica" },
+  { code: "NTRIP", label: "Correção em tempo real" },
+  { code: "SaaS", label: "Painel do cliente" },
+  { code: "PPK", label: "RINEX sob demanda" },
+];
+
+const heroStats = [
+  { value: "30 dias", label: "Avaliação grátis" },
   { value: "1–2 cm", label: "Precisão RTK" },
-  { value: "24/7", label: "Correção NTRIP" },
   { value: "BR", label: "Cobertura nacional" },
-  { value: "PPK", label: "RINEX sob demanda" },
+  { value: "24/7", label: "Caster NTRIP" },
 ];
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-[min(88vh,860px)] overflow-hidden pt-24 sm:pt-28">
-      <HeroVideoBackground />
+    <section className="relative pt-[6.25rem] sm:pt-[7.25rem] lg:pt-[8rem]">
+      <div className="hero-glow pointer-events-none absolute inset-x-0 top-0 h-[520px]" aria-hidden />
 
-      <div className="relative z-10 mx-auto flex min-h-[min(72vh,720px)] max-w-3xl flex-col justify-center px-4 py-16 sm:px-6 lg:py-20">
-        <div className="rounded-2xl border border-white/10 bg-card/55 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-md sm:p-8 lg:p-10">
-          <p className="text-center text-xs font-medium uppercase tracking-[0.2em] text-accent sm:text-left">
-            [ Alta precisão · Custo acessível · Cobertura nacional ]
-          </p>
-          <h1 className="mt-4 text-center text-3xl font-bold leading-tight tracking-tight sm:text-left sm:text-4xl lg:text-5xl">
-            A rede NTRIP para{" "}
-            <span className="text-accent">drones, máquinas e topografia</span>
-          </h1>
-          <p className="mt-5 text-center text-base leading-relaxed text-muted sm:text-left sm:text-lg">
-            Correção GNSS em tempo real para equipamentos no campo — do Matrice
-            com LiDAR ao harvester e ao receptor RTK, sem base própria em cada obra.
-          </p>
+      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-6 sm:px-6 sm:pb-8">
+        <div className="hero-panel rounded-3xl p-6 sm:p-8 lg:p-10 xl:p-12">
+          <div className="min-w-0">
+              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-brand-geo sm:text-xs">
+                [ Campo · Escritório · Cliente — num só lugar ]
+              </p>
 
-          <ul className="mt-8 grid grid-cols-2 gap-3 sm:gap-4">
-            {highlights.map((h) => (
-              <li
-                key={h.label}
-                className="rounded-xl border border-card-border/80 bg-background/50 px-3 py-3 text-center sm:px-4"
-              >
-                <p className="text-lg font-bold text-accent sm:text-xl">{h.value}</p>
-                <p className="mt-0.5 text-[11px] text-muted sm:text-xs">{h.label}</p>
-              </li>
-            ))}
-          </ul>
+              <h1 className="mt-5 text-3xl font-bold leading-[1.12] tracking-tight sm:text-4xl lg:text-[2.65rem] lg:leading-[1.1]">
+                Plataforma NTRIP para{" "}
+                <span className="brand-gradient-text">drones e topografia</span>
+              </h1>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <Link
-              href="#contato"
-              className="rounded-full bg-accent px-6 py-3.5 text-center text-sm font-semibold text-background transition hover:bg-accent-dim"
-            >
-              Avaliação gratuita 30 dias
-            </Link>
-            <Link
-              href="/cobertura"
-              className="rounded-full border border-drone/40 bg-drone/10 px-6 py-3.5 text-center text-sm font-medium text-drone transition hover:bg-drone/20"
-            >
-              Ver cobertura
-            </Link>
+              <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted sm:text-lg">
+                Caster NTRIP, credenciais no painel, mapa de cobertura e suporte em campo —
+                do cadastro à correção RTK no rover ou no drone, sem base própria em cada obra.
+              </p>
+
+              <ul className="mt-8 grid grid-cols-2 gap-3 sm:gap-4">
+                {features.map((f) => (
+                  <li key={f.code} className="hero-feature-card rounded-2xl px-4 py-4 sm:px-5 sm:py-5">
+                    <p className="text-2xl font-bold tracking-tight text-brand-geo sm:text-3xl">
+                      {f.code}
+                    </p>
+                    <p className="mt-1 text-xs text-muted sm:text-sm">{f.label}</p>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <HardNavLink
+                  href="/cadastro"
+                  className="rounded-full btn-brand-primary px-7 py-3.5 text-center text-sm sm:text-base"
+                >
+                  Trial grátis 30 dias
+                </HardNavLink>
+                <HardNavLink
+                  href="/#ntrip"
+                  className="rounded-full btn-brand-outline px-7 py-3.5 text-center text-sm font-medium sm:text-base"
+                >
+                  Ver módulos
+                </HardNavLink>
+              </div>
           </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-2 gap-6 border-t border-card-border/60 pt-8 sm:grid-cols-4 sm:gap-8">
+          {heroStats.map((s) => (
+            <div key={s.label}>
+              <p className="text-2xl font-bold text-brand-geo sm:text-3xl">{s.value}</p>
+              <p className="mt-1 text-sm text-muted">{s.label}</p>
+            </div>
+          ))}
         </div>
       </div>
     </section>

@@ -21,7 +21,7 @@ export default async function PlanosClientePage() {
           </p>
           <Link
             href="/#planos"
-            className="mt-4 inline-flex rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white hover:bg-accent-dim"
+            className="mt-4 inline-flex rounded-xl btn-brand-primary px-5 py-2.5 text-sm"
           >
             Ver planos no site
           </Link>

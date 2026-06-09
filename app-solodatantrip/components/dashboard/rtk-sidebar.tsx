@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import type { SessionUser } from "@/lib/auth";
 
 const navItems = [
@@ -22,12 +22,10 @@ function isActive(pathname: string, href: string): boolean {
 
 export function RtkSidebar({ user }: { user: SessionUser }) {
   const pathname = usePathname();
-  const router = useRouter();
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
-    router.refresh();
+    window.location.assign("/login");
   }
 
   return (
@@ -44,7 +42,7 @@ export function RtkSidebar({ user }: { user: SessionUser }) {
             <Link
               key={item.href}
               href={item.href}
-              className={`rtk-nav-item flex items-center gap-3 rounded-r-lg px-4 py-3 text-sm font-medium transition ${
+              className={`rtk-nav-item flex items-center gap-3 rounded-r-lg px-4 py-3.5 text-base font-medium transition ${
                 active ? "rtk-nav-active" : "text-white/80 hover:bg-white/5"
               }`}
             >
@@ -58,7 +56,7 @@ export function RtkSidebar({ user }: { user: SessionUser }) {
         <button
           type="button"
           onClick={logout}
-          className="rtk-nav-item flex w-full items-center gap-3 rounded-r-lg px-4 py-3 text-left text-sm font-medium text-white/80 transition hover:bg-white/5"
+          className="rtk-nav-item flex w-full items-center gap-3 rounded-r-lg px-4 py-3.5 text-left text-base font-medium text-white/80 transition hover:bg-white/5"
         >
           <span className="text-base opacity-80" aria-hidden>
             ⎋

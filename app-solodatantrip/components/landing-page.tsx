@@ -1,39 +1,55 @@
 import Link from "next/link";
-import { CoverageMapDynamic } from "./coverage-map-dynamic";
+import { CoverageMapViewport } from "./coverage-map-viewport";
+import { HardNavLink } from "./hard-nav-link";
 import { HeroSection } from "./hero-section";
 import { IndustriesSection } from "./industries-section";
 import { ServiceGuideSection } from "./service-guide-section";
 import { SiteHeader } from "./site-header";
 
-const stats = [
-  { value: "1–2 cm", label: "Precisão RTK" },
-  { value: "24/7", label: "Correção NTRIP" },
-  { value: "99,9%", label: "Disponibilidade alvo" },
-  { value: "BR", label: "Cobertura nacional" },
-];
-
 const plans = [
   {
-    name: "NTRIP Diário",
-    price: "R$ 29",
-    period: "/dia",
-    desc: "Correção em tempo real para drones e receptores compatíveis.",
-    features: ["1 usuário simultâneo", "Caster NTRIP", "Suporte por WhatsApp"],
+    name: "Trial",
+    price: "Grátis",
+    period: " · 30 dias",
+    desc: "Experimente a rede NTRIP na sua região com a sua equipa.",
+    features: [
+      "1 usuário simultâneo",
+      "Caster NTRIP",
+      "Suporte por e-mail",
+      "Sem cartão de crédito",
+    ],
+    cta: "Começar grátis",
+    href: "/cadastro",
   },
   {
-    name: "NTRIP Mensal",
+    name: "Pro",
     price: "R$ 199",
-    period: "/mês",
-    desc: "Uso recorrente em campo com cancelamento flexível.",
-    features: ["1 usuário simultâneo", "RTK + PPK (RINEX)", "Prioridade no suporte"],
+    period: " / mês",
+    desc: "Para equipas de campo e consultorias em crescimento.",
+    features: [
+      "RTK + PPK (RINEX)",
+      "Mapa de cobertura",
+      "Painel do cliente",
+      "Prioridade no suporte",
+    ],
     highlight: true,
+    badge: "Mais popular",
+    cta: "Assinar Pro",
+    href: "#contato",
   },
   {
-    name: "NTRIP Corporativo",
+    name: "Enterprise",
     price: "Sob consulta",
-    period: "",
-    desc: "Múltiplos usuários, mountpoints dedicados e SLA para equipes em campo.",
-    features: ["Vários acessos simultâneos", "Suporte prioritário", "Integração via API"],
+    period: " · contrato anual",
+    desc: "Grandes volumes, SLA e mountpoints dedicados sob medida.",
+    features: [
+      "Vários acessos simultâneos",
+      "Integração via API",
+      "Suporte prioritário",
+      "Gestor de conta dedicado",
+    ],
+    cta: "Falar com vendas",
+    href: "#contato",
   },
 ];
 
@@ -56,37 +72,29 @@ export function LandingPage() {
   return (
     <>
       <SiteHeader />
-      <main>
+      <main className="grid-bg">
         <HeroSection />
-
-        {/* Stats */}
-        <section className="border-y border-card-border bg-card/50 py-12">
-          <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-4 sm:grid-cols-4 sm:px-6">
-            {stats.map((s) => (
-              <div key={s.label} className="text-center sm:text-left">
-                <p className="text-2xl font-bold text-accent sm:text-3xl">{s.value}</p>
-                <p className="mt-1 text-sm text-muted">{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </section>
 
         <ServiceGuideSection />
 
         <IndustriesSection />
 
-        {/* NTRIP */}
-        <section id="ntrip" className="scroll-mt-24 py-20 sm:py-28">
+        {/* Módulos / NTRIP */}
+        <section id="ntrip" className="scroll-mt-32 py-20 sm:py-28">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-widest text-brand-geo">
+                Módulos activos
+              </p>
+              <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+                Rede NTRIP + dashboard
+              </h2>
+            </div>
+            <div className="mt-12 grid gap-12 lg:grid-cols-2 lg:items-start">
               <div>
-                <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                  Correção NTRIP / RTK
-                </h2>
-                <p className="mt-4 text-muted leading-relaxed">
-                  Conecte drones, tratores ou receptores GNSS ao nosso caster NTRIP e
-                  trabalhe com precisão centimétrica em tempo real — sem instalar base
-                  própria em cada obra.
+                <p className="text-muted leading-relaxed">
+                  Caster NTRIP com credenciais no painel, mapa de cobertura interactivo e
+                  suporte para drones, máquinas e receptores GNSS em tempo real.
                 </p>
                 <ul className="mt-8 space-y-3 text-sm">
                   {[
@@ -96,20 +104,20 @@ export function LandingPage() {
                     "Mapa de cobertura interativo",
                   ].map((item) => (
                     <li key={item} className="flex gap-3">
-                      <span className="mt-0.5 text-accent">✓</span>
+                      <span className="mt-0.5 text-brand-ntrip">✓</span>
                       {item}
                     </li>
                   ))}
                 </ul>
               </div>
               <div className="rounded-2xl border border-card-border bg-card p-6 sm:p-8">
-                <p className="text-xs font-medium uppercase tracking-wider text-accent">
+                <p className="text-xs font-medium uppercase tracking-wider text-brand-geo">
                   Mapa de cobertura
                 </p>
-                <CoverageMapDynamic compact />
+                <CoverageMapViewport compact />
                 <Link
                   href="/cobertura"
-                  className="mt-3 inline-block text-sm text-accent hover:underline"
+                  className="mt-3 inline-block text-sm text-brand-geo hover:underline"
                 >
                   Abrir mapa em tela cheia →
                 </Link>
@@ -119,25 +127,29 @@ export function LandingPage() {
         </section>
 
         {/* Plans */}
-        <section id="planos" className="scroll-mt-24 py-20 sm:py-28">
+        <section id="planos" className="scroll-mt-32 py-20 sm:py-28">
           <div className="mx-auto max-w-6xl px-4 text-center sm:px-6">
             <h2 className="text-3xl font-bold sm:text-4xl">Planos flexíveis</h2>
             <p className="mx-auto mt-4 max-w-xl text-muted">
-              Preço justo, sem surpresas. Valores de referência — ajuste comercial na
-              proposta final.
+              Trial sem cartão, Pro para equipas em crescimento, Enterprise sob medida.
             </p>
             <div className="mt-12 grid gap-6 md:grid-cols-3">
               {plans.map((plan) => (
                 <article
                   key={plan.name}
-                  className={`flex flex-col rounded-2xl border p-6 text-left ${
+                  className={`relative flex flex-col rounded-2xl border p-6 text-left ${
                     plan.highlight
-                      ? "border-accent bg-accent/5 shadow-[0_0_40px_var(--accent-glow)]"
+                      ? "border-brand-geo bg-brand-geo/5 shadow-[0_0_40px_var(--accent-glow)]"
                       : "border-card-border bg-card"
                   }`}
                 >
-                  <h3 className="font-semibold">{plan.name}</h3>
-                  <p className="mt-4">
+                  {plan.badge && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full brand-gradient-bg px-3 py-0.5 text-[11px] font-semibold text-[#030508]">
+                      {plan.badge}
+                    </span>
+                  )}
+                  <h3 className="text-lg font-semibold">{plan.name}</h3>
+                  <p className="mt-3">
                     <span className="text-3xl font-bold">{plan.price}</span>
                     <span className="text-muted">{plan.period}</span>
                   </p>
@@ -145,20 +157,18 @@ export function LandingPage() {
                   <ul className="mt-6 flex-1 space-y-2 text-sm">
                     {plan.features.map((f) => (
                       <li key={f} className="flex gap-2">
-                        <span className="text-accent">✓</span> {f}
+                        <span className="text-brand-ntrip">✓</span> {f}
                       </li>
                     ))}
                   </ul>
-                  <Link
-                    href="#contato"
+                  <HardNavLink
+                    href={plan.href}
                     className={`mt-8 block rounded-full py-3 text-center text-sm font-medium transition ${
-                      plan.highlight
-                        ? "bg-accent text-background hover:bg-accent-dim"
-                        : "border border-card-border hover:border-accent/40"
+                      plan.highlight ? "btn-brand-primary" : "btn-brand-outline"
                     }`}
                   >
-                    {plan.price === "Sob consulta" ? "Fale conosco" : "Contratar"}
-                  </Link>
+                    {plan.cta}
+                  </HardNavLink>
                 </article>
               ))}
             </div>
@@ -166,7 +176,7 @@ export function LandingPage() {
         </section>
 
         {/* FAQ */}
-        <section id="faq" className="scroll-mt-24 border-t border-card-border py-20 sm:py-28">
+        <section id="faq" className="scroll-mt-32 border-t border-card-border py-20 sm:py-28">
           <div className="mx-auto max-w-3xl px-4 sm:px-6">
             <h2 className="text-center text-3xl font-bold">Perguntas frequentes</h2>
             <dl className="mt-12 space-y-6">
@@ -184,28 +194,23 @@ export function LandingPage() {
         </section>
 
         {/* Contact */}
-        <section id="contato" className="scroll-mt-24 py-20 sm:py-28">
+        <section id="contato" className="scroll-mt-32 py-20 sm:py-28">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <div className="rounded-3xl border border-accent/30 bg-gradient-to-br from-accent/10 to-drone/10 p-8 sm:p-12 text-center">
+            <div className="rounded-3xl border border-brand-geo/30 bg-gradient-to-br from-brand-geo/10 via-brand-data/10 to-brand-ntrip/10 p-8 sm:p-12 text-center">
               <h2 className="text-2xl font-bold sm:text-3xl">
-                Comece com avaliação gratuita de 30 dias
+                Comece com trial grátis de 30 dias
               </h2>
               <p className="mx-auto mt-4 max-w-lg text-muted">
-                Teste a rede NTRIP na sua região ou peça um orçamento para sua equipe.
-                Resposta em até 24h úteis.
+                Crie a conta, teste o caster NTRIP na sua região e aceda às credenciais no
+                painel. Sem cartão de crédito no trial.
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-4">
-                <Link
-                  href="https://wa.me/5511999999999"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-full bg-accent px-8 py-3 text-sm font-semibold text-background hover:bg-accent-dim"
-                >
-                  WhatsApp
-                </Link>
+                <HardNavLink href="/cadastro" className="rounded-full btn-brand-primary px-8 py-3 text-sm">
+                  Criar conta grátis
+                </HardNavLink>
                 <Link
                   href="mailto:contato@datageontrip.com.br"
-                  className="rounded-full border border-card-border px-8 py-3 text-sm font-medium hover:border-accent/40"
+                  className="rounded-full btn-brand-outline px-8 py-3 text-sm font-medium"
                 >
                   contato@datageontrip.com.br
                 </Link>
@@ -215,9 +220,17 @@ export function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-card-border py-10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 text-sm text-muted sm:flex-row sm:px-6">
-          <p>© {new Date().getFullYear()} Datageo Ntrip. Todos os direitos reservados.</p>
+      <footer className="border-t border-card-border bg-card/30 py-10">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-4 text-sm text-muted sm:flex-row sm:px-6">
+          <p>
+            © {new Date().getFullYear()}{" "}
+            <span className="brand-wordmark">
+              <span className="brand-data">Data</span>
+              <span className="brand-geo">Geo</span>{" "}
+              <span className="brand-ntrip">NTrip</span>
+            </span>
+            . Todos os direitos reservados.
+          </p>
           <nav className="flex gap-6">
             <Link href="#ntrip" className="hover:text-foreground">
               NTRIP

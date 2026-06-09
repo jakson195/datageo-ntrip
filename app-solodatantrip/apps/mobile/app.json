@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "Datageo RTK",
+    "slug": "datageo-rtk",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "datageo-rtk",
+    "platforms": ["ios", "android"],
+    "ios": { "bundleIdentifier": "com.datageo.rtk" },
+    "android": { "package": "com.datageo.rtk" }
+  }
+}

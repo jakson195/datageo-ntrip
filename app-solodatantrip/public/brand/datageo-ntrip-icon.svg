@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 80" fill="none" role="img" aria-label="DataGeo NTrip">
+  <defs>
+    <linearGradient id="pin-gradient" x1="8" y1="4" x2="56" y2="72" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1a4d8c"/>
+      <stop offset="0.45" stop-color="#00c8f0"/>
+      <stop offset="1" stop-color="#8fd400"/>
+    </linearGradient>
+    <linearGradient id="pin-shine" x1="18" y1="16" x2="34" y2="40" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <path
+    d="M32 4C20.4 4 11 13.4 11 25c0 14.8 17.2 32.4 19.2 34.3a2.8 2.8 0 0 0 3.6 0C35.8 57.4 53 39.8 53 25 53 13.4 43.6 4 32 4Z"
+    fill="url(#pin-gradient)"
+  />
+  <path
+    d="M32 4C20.4 4 11 13.4 11 25c0 14.8 17.2 32.4 19.2 34.3a2.8 2.8 0 0 0 3.6 0C35.8 57.4 53 39.8 53 25 53 13.4 43.6 4 32 4Z"
+    fill="url(#pin-shine)"
+  />
+  <path
+    d="M32 18c-3.9 0-7 3.1-7 7s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7Z"
+    fill="#fff"
+  />
+  <path
+    d="M32 22.5c-1.4 0-2.5 1.1-2.5 2.5v5.5c0 .8.7 1.5 1.5 1.5h2c.8 0 1.5-.7 1.5-1.5V25c0-1.4-1.1-2.5-2.5-2.5Z"
+    fill="#1a4d8c"
+  />
+  <path
+    d="M18 24c2.2-3.4 5.8-5.6 10-5.9"
+    stroke="#7ee8ff"
+    stroke-width="1.5"
+    stroke-linecap="round"
+  />
+  <path
+    d="M16 30c3-4.2 7.4-6.8 12.5-6.8"
+    stroke="#7ee8ff"
+    stroke-width="1.2"
+    stroke-linecap="round"
+    opacity="0.85"
+  />
+  <path
+    d="M15 36c3.6-4.8 9-7.6 15-7.6"
+    stroke="#7ee8ff"
+    stroke-width="1"
+    stroke-linecap="round"
+    opacity="0.7"
+  />
+  <rect x="44" y="20" width="3" height="3" fill="#00c8f0" opacity="0.9"/>
+  <rect x="48" y="24" width="2.5" height="2.5" fill="#8fd400" opacity="0.85"/>
+  <rect x="46" y="28" width="2" height="2" fill="#00c8f0" opacity="0.75"/>
+</svg>

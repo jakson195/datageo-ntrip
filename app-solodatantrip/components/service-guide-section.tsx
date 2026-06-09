@@ -5,7 +5,7 @@ type GuideBlock = {
   id: string;
   title: string;
   subtitle: string;
-  accent: "accent" | "drone";
+  accent: "geo" | "ntrip";
   icon: ReactNode;
   items: { label: string; text: string }[];
 };
@@ -15,7 +15,7 @@ const blocks: GuideBlock[] = [
     id: "fluxo",
     title: "Do cadastro ao fix RTK",
     subtitle: "Fluxo em 4 etapas — da ativação ao trabalho em campo",
-    accent: "accent",
+    accent: "geo",
     icon: (
       <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M4 12h4l2-4 4 8 2-4h4" strokeLinecap="round" strokeLinejoin="round" />
@@ -44,7 +44,7 @@ const blocks: GuideBlock[] = [
     id: "pacote",
     title: "O que você recebe",
     subtitle: "Serviços digitais incluídos na plataforma Datageo Ntrip",
-    accent: "drone",
+    accent: "ntrip",
     icon: (
       <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.5">
         <circle cx="12" cy="12" r="3" />
@@ -79,7 +79,7 @@ const blocks: GuideBlock[] = [
     id: "checklist",
     title: "Checklist antes de começar",
     subtitle: "Evite retrabalho no campo",
-    accent: "accent",
+    accent: "geo",
     icon: (
       <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M9 11l3 3L22 4" strokeLinecap="round" strokeLinejoin="round" />
@@ -108,28 +108,28 @@ const blocks: GuideBlock[] = [
 ];
 
 function accentClass(accent: GuideBlock["accent"]) {
-  return accent === "drone"
-    ? "border-drone text-drone bg-drone/10"
-    : "border-accent text-accent bg-accent/10";
+  return accent === "ntrip"
+    ? "border-brand-ntrip/50 text-brand-ntrip bg-brand-ntrip/10"
+    : "border-brand-geo/50 text-brand-geo bg-brand-geo/10";
 }
 
 export function ServiceGuideSection() {
   return (
     <section
       id="como-funciona"
-      className="scroll-mt-24 border-y border-card-border bg-[#0a0e14] py-20 sm:py-24"
+      className="scroll-mt-32 border-y border-card-border bg-card/90 py-20 sm:py-24"
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-widest text-accent">
-            Guia do serviço
+          <p className="text-xs font-semibold uppercase tracking-widest text-brand-geo">
+            Guia da plataforma
           </p>
           <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-            NTRIP e drone, explicados de forma direta
+            NTRIP e RTK, explicados de forma directa
           </h2>
           <p className="mt-3 text-muted">
-            Estrutura pensada para quem precisa corrigir posição e processar imagens — sem
-            depender só de manuais genéricos de rede RTK.
+            Estrutura pensada para consultorias e equipas que precisam de correção GNSS em
+            campo, credenciais simples e suporte técnico no dia a dia.
           </p>
         </div>
 
@@ -144,8 +144,8 @@ export function ServiceGuideSection() {
               <div
                 className={`flex shrink-0 flex-col justify-center border-b border-card-border px-6 py-8 lg:w-72 lg:border-b-0 ${
                   index % 2 === 1
-                    ? "lg:border-l lg:border-card-border lg:bg-drone/5"
-                    : "lg:border-r lg:border-card-border lg:bg-accent/5"
+                    ? "lg:border-l lg:border-card-border lg:bg-brand-ntrip/5"
+                    : "lg:border-r lg:border-card-border lg:bg-brand-geo/5"
                 }`}
               >
                 <div
@@ -174,16 +174,10 @@ export function ServiceGuideSection() {
         </div>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <Link
-            href="/cobertura"
-            className="rounded-full bg-drone px-6 py-3 text-sm font-semibold text-background transition hover:opacity-90"
-          >
-            Ver mapa de cobertura
+          <Link href="/#ntrip" className="rounded-full btn-brand-primary px-6 py-3 text-sm">
+            Ver todos os módulos
           </Link>
-          <Link
-            href="#contato"
-            className="rounded-full border border-card-border px-6 py-3 text-sm font-medium transition hover:border-accent/50"
-          >
+          <Link href="#contato" className="rounded-full btn-brand-outline px-6 py-3 text-sm font-medium">
             Falar com especialista
           </Link>
         </div>

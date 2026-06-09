@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { clientFetch } from "@/lib/client-fetch";
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/area-cliente/credenciais";
 
@@ -20,7 +20,7 @@ export function LoginForm() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await clientFetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -32,8 +32,7 @@ export function LoginForm() {
         return;
       }
 
-      router.push(data.redirect ?? next);
-      router.refresh();
+      window.location.assign(data.redirect ?? next);
     } catch {
       setError("Erro de conexão. Tente novamente.");
     } finally {
@@ -54,7 +53,7 @@ export function LoginForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mt-1.5 w-full rounded-xl border border-[#d1d9e6] bg-white px-4 py-3 text-sm text-[#0f172a] outline-none ring-accent/30 focus:border-accent focus:ring-2"
+          className="mt-1.5 w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-[#0f172a] outline-none ring-brand-geo/30 focus:border-brand-geo focus:ring-2"
           placeholder="seu@email.com"
         />
       </div>
@@ -69,7 +68,7 @@ export function LoginForm() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mt-1.5 w-full rounded-xl border border-[#d1d9e6] bg-white px-4 py-3 text-sm text-[#0f172a] outline-none ring-accent/30 focus:border-accent focus:ring-2"
+          className="mt-1.5 w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-[#0f172a] outline-none ring-brand-geo/30 focus:border-brand-geo focus:ring-2"
           placeholder="••••••••"
         />
       </div>
@@ -83,13 +82,13 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-xl bg-accent py-3.5 text-sm font-semibold text-white transition hover:bg-accent-dim disabled:opacity-60"
+        className="w-full rounded-xl btn-brand-primary py-3.5 text-sm disabled:opacity-60"
       >
         {loading ? "Entrando…" : "Entrar"}
       </button>
 
       <p className="text-center text-xs text-[#64748b]">
-        <Link href="/" className="text-accent hover:underline">
+        <Link href="/" className="text-brand-geo hover:underline">
           Voltar ao site
         </Link>
       </p>

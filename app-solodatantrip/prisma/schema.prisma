@@ -1,0 +1,495 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum RtkLicenseStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  SUSPENDED
+}
+
+enum RtkApiMode {
+  TEST
+  PRODUCTION
+}
+
+enum SubscriptionStatus {
+  ATIVO
+  INATIVO
+}
+
+enum TrialRegistryStatus {
+  ACTIVE
+  CONSUMED
+  REVOKED
+}
+
+enum RtkAuditAction {
+  LICENSE_CREATE
+  LICENSE_RENEW
+  LICENSE_EXPIRE
+  LICENSE_SUSPEND
+  LICENSE_WEBHOOK
+}
+
+enum ActivationSource {
+  REGISTRATION
+  TRIAL
+  MANUAL
+  STRIPE
+  MERCADO_PAGO
+}
+
+enum NtripSubscriptionStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  EXPIRED
+}
+
+enum NtripAccountStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  EXPIRED
+}
+
+enum BillingSubscriptionStatus {
+  PENDING
+  ACTIVE
+  OVERDUE
+  SUSPENDED
+  CANCELLED
+}
+
+enum PaymentProvider {
+  STRIPE
+  MERCADO_PAGO
+  MANUAL
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  PENDING
+  ISSUED
+  CANCELLED
+  FAILED
+}
+
+enum UserRole {
+  USER
+  RESELLER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum CasterStatus {
+  ONLINE
+  OFFLINE
+  DEGRADED
+}
+
+// ─── Multi-tenant ────────────────────────────────────────────────────────────
+
+model Tenant {
+  id         String   @id @default(cuid())
+  name       String
+  slug       String   @unique
+  domain     String?
+  whiteLabel Json?    @map("white_label")
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  users User[]
+
+  @@map("tenants")
+}
+
+// ─── Users ───────────────────────────────────────────────────────────────────
+
+model User {
+  id                   String             @id @default(cuid())
+  email                String             @unique
+  passwordHash         String             @map("password_hash")
+  name                 String
+  role                 UserRole           @default(USER)
+  tenantId             String?            @map("tenant_id")
+  stripeCustomerId     String?            @map("stripe_customer_id")
+  mercadoPagoCustomerId String?           @map("mercadopago_customer_id")
+  mfaEnabled           Boolean            @default(false) @map("mfa_enabled")
+  mfaSecretEnc         String?            @map("mfa_secret_enc")
+  allowedIps           String[]           @default([]) @map("allowed_ips")
+  streams              Int                @default(0)
+  expiryDate           DateTime?          @map("expiry_date")
+  credentialsActive    Boolean            @default(false) @map("credentials_active")
+  ntripServer          String             @default("sa.geodnet.com") @map("ntrip_server")
+  ntripPort            String             @default("2101") @map("ntrip_port")
+  ntripMountpoint      String             @default("AUTO") @map("ntrip_mountpoint")
+  ntripUsername        String             @default("NONE") @map("ntrip_username")
+  ntripPasswordEnc     String             @default("NONE") @map("ntrip_password_enc")
+  subscriptionPlan     String             @default("pendente") @map("subscription_plan")
+  subscriptionStatus   SubscriptionStatus @default(INATIVO) @map("subscription_status")
+  subscriptionLabel    String             @default("Aguardando ativação") @map("subscription_label")
+  activeLicenseId      String?            @map("active_license_id")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+  deletedAt            DateTime?          @map("deleted_at")
+
+  tenant               Tenant?              @relation(fields: [tenantId], references: [id])
+  rtkLicenses          RtkLicense[]
+  auditLogs            RtkAuditLog[]
+  trialEntries         TrialRegistry[]
+  billingSubscriptions BillingSubscription[]
+  ntripSubscriptions   NtripSubscription[]
+  ntripAccounts        NtripAccount[]
+  payments             Payment[]
+  invoices             Invoice[]
+  sessions             UserSession[]
+  devices              GnssDevice[]
+
+  @@index([email])
+  @@index([deletedAt])
+  @@index([credentialsActive])
+  @@index([tenantId])
+  @@index([role])
+  @@map("users")
+}
+
+model UserSession {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  tokenHash String    @map("token_hash")
+  ipAddress String?   @map("ip_address")
+  userAgent String?   @map("user_agent")
+  deviceId  String?   @map("device_id")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+  @@map("user_sessions")
+}
+
+model GnssDevice {
+  id         String    @id @default(cuid())
+  userId     String    @map("user_id")
+  name       String
+  brand      String?
+  model      String?
+  serialNumber String? @map("serial_number")
+  lastSeenAt DateTime? @map("last_seen_at")
+  lastIp     String?   @map("last_ip")
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("gnss_devices")
+}
+
+// ─── RTK ─────────────────────────────────────────────────────────────────────
+
+model RtkLicense {
+  id               String           @id @default(cuid())
+  licenseId        String           @unique @map("license_id")
+  userId           String           @map("user_id")
+  plan             String
+  status           RtkLicenseStatus @default(PENDING)
+  mode             RtkApiMode       @default(TEST)
+  expiresAt        DateTime?        @map("expires_at")
+  ntripServer      String           @map("ntrip_server")
+  ntripPort        String           @default("2101") @map("ntrip_port")
+  ntripMountpoint  String           @default("AUTO") @map("ntrip_mountpoint")
+  ntripUsername    String           @map("ntrip_username")
+  ntripPasswordEnc String           @map("ntrip_password_enc")
+  isPrimary        Boolean          @default(false) @map("is_primary")
+  provider         String           @default("rtkdata-reseller")
+  idempotencyKey   String?          @map("idempotency_key")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  deletedAt        DateTime?        @map("deleted_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([licenseId])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([isPrimary])
+  @@index([deletedAt])
+  @@map("rtk_licenses")
+}
+
+model RtkAuditLog {
+  id        String         @id @default(cuid())
+  action    RtkAuditAction
+  userId    String         @map("user_id")
+  userEmail String         @map("user_email")
+  licenseId String?        @map("license_id")
+  ip        String
+  metadata  Json?
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([licenseId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("rtk_audit_logs")
+}
+
+model TrialRegistry {
+  id        String              @id @default(cuid())
+  email     String              @unique
+  userId    String?             @map("user_id")
+  licenseId String?             @map("license_id")
+  status    TrialRegistryStatus @default(ACTIVE)
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+  deletedAt DateTime?           @map("deleted_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("trial_registry")
+}
+
+model RtkCaster {
+  id              String       @id @default(cuid())
+  name            String
+  host            String
+  port            Int          @default(2101)
+  mountpoint      String       @default("AUTO")
+  provider        String       @default("rtkdata")
+  status          CasterStatus @default(OFFLINE)
+  latitude        Float?
+  longitude       Float?
+  uptimePercent   Float?       @map("uptime_percent")
+  latencyMs       Int?         @map("latency_ms")
+  connectedUsers  Int          @default(0) @map("connected_users")
+  lastCheckedAt   DateTime?    @map("last_checked_at")
+  active          Boolean      @default(true)
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([provider])
+  @@map("rtk_casters")
+}
+
+// ─── Billing / Commercial ────────────────────────────────────────────────────
+
+model Plan {
+  id                String    @id @default(cuid())
+  slug              String    @unique
+  name              String
+  price             Decimal   @db.Decimal(10, 2)
+  durationDays      Int       @map("duration_days")
+  maxDevices        Int       @default(1) @map("max_devices")
+  active            Boolean   @default(true)
+  stripePriceId     String?   @map("stripe_price_id")
+  mercadoPagoPlanId String?   @map("mercadopago_plan_id")
+  features          Json?
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  subscriptions BillingSubscription[]
+  ntripSubscriptions NtripSubscription[]
+
+  @@index([active])
+  @@index([slug])
+  @@map("plans")
+}
+
+model BillingSubscription {
+  id                 String                    @id @default(cuid())
+  userId             String                    @map("user_id")
+  planId             String                    @map("plan_id")
+  status             BillingSubscriptionStatus @default(PENDING)
+  provider           PaymentProvider
+  externalId         String?                   @map("external_id")
+  externalCustomerId String?                   @map("external_customer_id")
+  currentPeriodStart DateTime?                 @map("current_period_start")
+  currentPeriodEnd   DateTime?                 @map("current_period_end")
+  cancelAt           DateTime?                 @map("cancel_at")
+  cancelledAt        DateTime?                 @map("cancelled_at")
+  retryCount         Int                       @default(0) @map("retry_count")
+  lastPaymentAt      DateTime?                 @map("last_payment_at")
+  nextBillingAt      DateTime?                 @map("next_billing_at")
+  createdAt          DateTime                  @default(now()) @map("created_at")
+  updatedAt          DateTime                  @updatedAt @map("updated_at")
+  deletedAt          DateTime?                 @map("deleted_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan     Plan      @relation(fields: [planId], references: [id])
+  payments Payment[]
+  invoices Invoice[]
+  ntripSubscription NtripSubscription?
+
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
+  @@index([nextBillingAt])
+  @@index([externalId])
+  @@map("billing_subscriptions")
+}
+
+model Payment {
+  id              String         @id @default(cuid())
+  subscriptionId  String?        @map("subscription_id")
+  userId          String         @map("user_id")
+  provider        PaymentProvider
+  externalId      String?        @map("external_id")
+  amount          Decimal        @db.Decimal(10, 2)
+  currency        String         @default("BRL")
+  status          PaymentStatus  @default(PENDING)
+  method          String?
+  pixQrCode       String?        @map("pix_qr_code") @db.Text
+  pixQrCodeBase64 String?        @map("pix_qr_code_base64") @db.Text
+  pixTicketUrl    String?        @map("pix_ticket_url")
+  paidAt          DateTime?      @map("paid_at")
+  metadata        Json?
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription BillingSubscription? @relation(fields: [subscriptionId], references: [id])
+  invoices     Invoice[]
+
+  @@index([userId])
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([externalId])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+model Invoice {
+  id               String        @id @default(cuid())
+  subscriptionId   String?       @map("subscription_id")
+  userId           String        @map("user_id")
+  paymentId        String?       @map("payment_id")
+  amount           Decimal       @db.Decimal(10, 2)
+  status           InvoiceStatus @default(DRAFT)
+  fiscalProvider   String?       @map("fiscal_provider")
+  externalId       String?       @map("external_id")
+  nfNumber         String?       @map("nf_number")
+  nfKey            String?       @map("nf_key")
+  issuedAt         DateTime?     @map("issued_at")
+  metadata         Json?
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription BillingSubscription? @relation(fields: [subscriptionId], references: [id])
+  payment      Payment?             @relation(fields: [paymentId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("invoices")
+}
+
+model BillingEvent {
+  id         String          @id @default(cuid())
+  provider   PaymentProvider
+  eventType  String          @map("event_type")
+  externalId String?         @map("external_id")
+  payload    Json
+  processed  Boolean         @default(false)
+  createdAt  DateTime        @default(now()) @map("created_at")
+
+  @@index([provider])
+  @@index([processed])
+  @@index([createdAt])
+  @@map("billing_events")
+}
+
+// ─── NTRIP entitlement (assinatura produto) ─────────────────────────────────
+
+model NtripSubscription {
+  id                    String                   @id @default(cuid())
+  userId                String                   @map("user_id")
+  planId                String                   @map("plan_id")
+  billingSubscriptionId String?                  @unique @map("billing_subscription_id")
+  status                NtripSubscriptionStatus  @default(PENDING)
+  source                ActivationSource         @default(REGISTRATION)
+  startsAt              DateTime?                @map("starts_at")
+  expiresAt             DateTime?                @map("expires_at")
+  activatedAt           DateTime?                @map("activated_at")
+  suspendedAt           DateTime?                @map("suspended_at")
+  createdAt             DateTime                 @default(now()) @map("created_at")
+  updatedAt             DateTime                 @updatedAt @map("updated_at")
+  deletedAt             DateTime?                @map("deleted_at")
+
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                Plan                 @relation(fields: [planId], references: [id])
+  billingSubscription BillingSubscription? @relation(fields: [billingSubscriptionId], references: [id])
+  ntripAccounts       NtripAccount[]
+
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([deletedAt])
+  @@map("subscriptions")
+}
+
+model NtripAccount {
+  id             String             @id @default(cuid())
+  userId         String             @map("user_id")
+  subscriptionId String             @map("subscription_id")
+  rtkLicenseId   String?            @unique @map("rtk_license_id")
+  host           String
+  port           String             @default("2101")
+  mountpoint     String             @default("AUTO")
+  username       String
+  passwordEnc    String             @map("password_enc")
+  status         NtripAccountStatus @default(PENDING)
+  expiresAt      DateTime?          @map("expires_at")
+  isPrimary      Boolean            @default(true) @map("is_primary")
+  provisionedAt  DateTime?          @map("provisioned_at")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+  deletedAt      DateTime?          @map("deleted_at")
+
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription NtripSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([isPrimary])
+  @@index([deletedAt])
+  @@map("ntrip_accounts")
+}

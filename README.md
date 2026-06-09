@@ -16,13 +16,11 @@ npm install
 npm run dev
 ```
 
-App local: http://localhost:3001
+App local: http://localhost:3000
 
 ## GitHub
 
 Repositório: https://github.com/jakson195/datageo-ntrip
-
-Enviar alterações:
 
 ```bash
 git add .
@@ -30,29 +28,34 @@ git commit -m "sua mensagem"
 git push origin main
 ```
 
-## Vercel
+## Deploy na Vercel
 
-1. Acesse [vercel.com/new](https://vercel.com/new) e importe o repositório `jakson195/datageo-ntrip`.
-2. **Root Directory:** `app-solodatantrip` (obrigatório — o `package.json` está nesta pasta).
-3. Framework: **Next.js** (detectado automaticamente).
-4. **Environment Variables** (Settings → Environment Variables), igual ao que você usa no localhost — veja `app-solodatantrip/.env.example`:
+1. [vercel.com/new](https://vercel.com/new) → importe o repositório.
+2. **Root Directory:** `app-solodatantrip` (obrigatório).
+3. **PostgreSQL:** conecte **Neon** (Storage → Postgres) ou **Supabase** — guia completo em [`app-solodatantrip/docs/DEPLOY-VERCEL-POSTGRES.md`](app-solodatantrip/docs/DEPLOY-VERCEL-POSTGRES.md).
+4. **Environment Variables** (Production):
 
-   | Variável | Obrigatório | Exemplo |
-   |----------|-------------|---------|
-   | `AUTH_SECRET` | Sim (produção) | string com 16+ caracteres |
-   | `DEMO_LOGIN_EMAIL` | Recomendado | `cliente@datageo.com.br` |
-   | `DEMO_LOGIN_PASSWORD` | Recomendado | `demo123` |
-   | `NTRIP_SERVER`, `NTRIP_PORT`, `NTRIP_MOUNTPOINT` | Opcional | caster demo |
-   | `NTRIP_USERNAME`, `NTRIP_PASSWORD` | Opcional | credenciais demo |
+   | Variável | Obrigatório | Notas |
+   |----------|-------------|-------|
+   | `AUTH_SECRET` | Sim | `openssl rand -base64 32` |
+   | `DATABASE_URL` | Sim* | Pool (runtime); Neon: mapeado de `POSTGRES_URL` |
+   | `DIRECT_URL` | Sim* | Direct (migrations); Neon: de `POSTGRES_URL_NON_POOLING` |
+   | `ADMIN_PASSWORD` | Sim (seed) | Senha do admin inicial |
+   | `ADMIN_EMAIL` | Recomendado | Padrão `admin@datageo.com.br` |
+   | `NEXT_PUBLIC_APP_URL` | Sim (checkout) | URL pública do app |
 
-   O `vercel.json` na raiz já define `rootDirectory: app-solodatantrip` — não precisa configurar pasta manualmente se o projeto importar o repo completo.
+   \* Com integração Neon na Vercel, `POSTGRES_URL` basta no build/runtime; o app mapeia automaticamente.
 
-5. Deploy. Cada `git push` na `main` gera um novo deploy (igual ao localhost após o push).
+5. Após o primeiro deploy, rode o seed uma vez (local com env de produção):
 
-### Cadastro de clientes na Vercel
+   ```bash
+   cd app-solodatantrip
+   vercel env pull .env.production.local --environment=production
+   npm run db:seed
+   ```
 
-O cadastro grava em `data/users.json` no disco do servidor. Na Vercel (serverless) esse arquivo **não persiste** entre deploys nem entre instâncias. Para produção com cadastro real, use banco (Postgres, Supabase, Vercel KV, etc.). A conta **demo** via variáveis de ambiente funciona normalmente.
+6. Cada push na `main` aplica migrations e faz deploy.
 
 ### Domínio
 
-Em Vercel → Project → Settings → Domains, adicione seu domínio (ex.: `ntrip.datageo.com.br`).
+Vercel → Project → Settings → Domains (ex.: `ntrip.datageo.com.br`).

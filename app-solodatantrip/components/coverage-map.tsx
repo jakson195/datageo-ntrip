@@ -3,33 +3,9 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useId, useRef } from "react";
 import maplibregl from "maplibre-gl";
-
-const CACHE_KEY = "sdn_coverage_v2";
-const CACHE_TTL = 6 * 60 * 60 * 1000;
-
-type CoverageData = {
-  coverage25?: GeoJSON.Feature;
-  coverage100?: GeoJSON.Feature;
-};
-
-function getCache(): CoverageData | null {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
-    const { ts, data } = JSON.parse(raw) as { ts: number; data: CoverageData };
-    return Date.now() - ts < CACHE_TTL ? data : null;
-  } catch {
-    return null;
-  }
-}
-
-function setCache(data: CoverageData) {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
-  } catch {
-    /* ignore quota */
-  }
-}
+import { clientFetch } from "@/lib/client-fetch";
+import { getCoverageCache, mergeCoverageCache } from "@/lib/coverage-client-cache";
+import type { CoverageData } from "@/lib/coverage-types";
 
 function lighten(hex: string, pct: number) {
   const m = hex.replace("#", "");
@@ -71,7 +47,7 @@ export function CoverageMap({ compact = false }: CoverageMapProps) {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const baseAccent = "#00c2a8";
+    const baseAccent = "#00c8f0";
     const fill2 = darken(baseAccent, 8);
     const fill10 = lighten(baseAccent, 12);
     const legendColor = lighten(baseAccent, 18);
@@ -146,54 +122,95 @@ export function CoverageMap({ compact = false }: CoverageMapProps) {
       else setPill("no", "Sem cobertura aqui");
     };
 
-    const draw = (d: CoverageData) => {
-      if (d.coverage100 && !map.getSource("c100")) {
-        map.addSource("c100", { type: "geojson", data: d.coverage100 });
-        map.addLayer({
-          id: "c100-fill",
-          type: "fill",
-          source: "c100",
-          paint: { "fill-color": fill10, "fill-opacity": 0.3 },
+    const addLayer25 = (feature: GeoJSON.Feature) => {
+      if (map.getSource("c25")) return;
+      map.addSource("c25", { type: "geojson", data: feature });
+      map.addLayer({
+        id: "c25-fill",
+        type: "fill",
+        source: "c25",
+        paint: { "fill-color": fill2, "fill-opacity": 0.55 },
+      });
+      map.addLayer({
+        id: "c25-line",
+        type: "line",
+        source: "c25",
+        paint: { "line-color": fill2, "line-opacity": 0.75, "line-width": 1 },
+      });
+    };
+
+    const addLayer100 = (feature: GeoJSON.Feature) => {
+      if (map.getSource("c100")) return;
+      map.addSource("c100", { type: "geojson", data: feature });
+      map.addLayer({
+        id: "c100-fill",
+        type: "fill",
+        source: "c100",
+        paint: { "fill-color": fill10, "fill-opacity": 0.3 },
+      });
+      map.addLayer({
+        id: "c100-line",
+        type: "line",
+        source: "c100",
+        paint: { "line-color": fill10, "line-opacity": 0.45, "line-width": 1 },
+      });
+    };
+
+    const drawProgressive = (d: CoverageData) => {
+      if (d.coverage25) addLayer25(d.coverage25);
+      if (d.coverage100) {
+        requestAnimationFrame(() => {
+          addLayer100(d.coverage100!);
+          addLabelOverlay();
+          if (map.getLayer("labels")) map.moveLayer("labels");
         });
-        map.addLayer({
-          id: "c100-line",
-          type: "line",
-          source: "c100",
-          paint: { "line-color": fill10, "line-opacity": 0.45, "line-width": 1 },
-        });
+      } else {
+        addLabelOverlay();
+        if (map.getLayer("labels")) map.moveLayer("labels");
       }
-      if (d.coverage25 && !map.getSource("c25")) {
-        map.addSource("c25", { type: "geojson", data: d.coverage25 });
-        map.addLayer({
-          id: "c25-fill",
-          type: "fill",
-          source: "c25",
-          paint: { "fill-color": fill2, "fill-opacity": 0.55 },
-        });
-        map.addLayer({
-          id: "c25-line",
-          type: "line",
-          source: "c25",
-          paint: { "line-color": fill2, "line-opacity": 0.75, "line-width": 1 },
-        });
+    };
+
+    const updateSources = (d: CoverageData) => {
+      const s100 = map.getSource("c100") as maplibregl.GeoJSONSource | undefined;
+      const s25 = map.getSource("c25") as maplibregl.GeoJSONSource | undefined;
+      if (d.coverage25) {
+        if (s25) s25.setData(d.coverage25);
+        else addLayer25(d.coverage25);
+      }
+      if (d.coverage100) {
+        if (s100) s100.setData(d.coverage100);
+        else addLayer100(d.coverage100);
       }
       addLabelOverlay();
       if (map.getLayer("labels")) map.moveLayer("labels");
     };
 
-    const update = (d: CoverageData) => {
-      const s100 = map.getSource("c100") as maplibregl.GeoJSONSource | undefined;
-      const s25 = map.getSource("c25") as maplibregl.GeoJSONSource | undefined;
-      if (s100 && d.coverage100) s100.setData(d.coverage100);
-      if (s25 && d.coverage25) s25.setData(d.coverage25);
-      if (map.getLayer("labels")) map.moveLayer("labels");
-    };
-
-    const fetchCoverage = async () => {
-      const r = await fetch("/api/coverage", { headers: { Accept: "application/json" } });
+    const fetchCoverageLayer = async (layer: "25" | "100"): Promise<CoverageData> => {
+      const r = await clientFetch(`/api/coverage?layer=${layer}`, {
+        headers: { Accept: "application/json" },
+      });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const j = await r.json();
       return (j.data ?? j) as CoverageData;
+    };
+
+    const loadCoverage = async () => {
+      const cached = getCoverageCache();
+      if (cached) drawProgressive(cached);
+
+      try {
+        const layer25 = await fetchCoverageLayer("25");
+        const merged = mergeCoverageCache(layer25);
+        if (!cached?.coverage25) drawProgressive({ coverage25: merged.coverage25 });
+        else updateSources({ coverage25: merged.coverage25 });
+
+        const layer100 = await fetchCoverageLayer("100");
+        const full = mergeCoverageCache(layer100);
+        updateSources(full);
+        if (!cached) drawProgressive(full);
+      } catch {
+        if (!cached) setPill("no", "Mapa indisponível");
+      }
     };
 
     markerRef.current = new maplibregl.Marker({ color: fill2 });
@@ -202,17 +219,8 @@ export function CoverageMap({ compact = false }: CoverageMapProps) {
       if (map.isStyleLoaded()) addLabelOverlay();
     });
 
-    map.on("load", async () => {
-      const cached = getCache();
-      if (cached) draw(cached);
-      try {
-        const fresh = await fetchCoverage();
-        setCache(fresh);
-        if (!cached) draw(fresh);
-        else update(fresh);
-      } catch {
-        if (!cached) setPill("no", "Mapa indisponível");
-      }
+    map.on("load", () => {
+      void loadCoverage();
     });
 
     map.on("click", (e) => {
@@ -228,9 +236,9 @@ export function CoverageMap({ compact = false }: CoverageMapProps) {
       return Math.abs(a) <= 90 ? [b, a] : [a, b];
     };
 
-    const nominatim = async (q: string) => {
-      const url = `https://nominatim.openstreetmap.org/search?format=geojson&limit=6&accept-language=pt-BR&q=${encodeURIComponent(q)}`;
-      const r = await fetch(url, { headers: { Accept: "application/json" } });
+    const searchPlaces = async (q: string, offset = 0) => {
+      const url = `/api/geocoding/search?q=${encodeURIComponent(q)}&limit=6&offset=${offset}`;
+      const r = await clientFetch(url, { headers: { Accept: "application/json" } });
       if (!r.ok) throw new Error("search failed");
       return r.json() as Promise<GeoJSON.FeatureCollection>;
     };
@@ -279,7 +287,7 @@ export function CoverageMap({ compact = false }: CoverageMapProps) {
         return;
       }
       try {
-        const g = await nominatim(s);
+        const g = await searchPlaces(s, 0);
         const items = (g.features ?? []).map((f) => ({
           label: (f.properties as { display_name?: string })?.display_name ?? "Local",
           center: (f.geometry as GeoJSON.Point).coordinates as [number, number],
@@ -293,7 +301,7 @@ export function CoverageMap({ compact = false }: CoverageMapProps) {
     const input = inputRef.current;
     const onInput = () => {
       if (deb) clearTimeout(deb);
-      deb = setTimeout(runSearch, 250);
+      deb = setTimeout(runSearch, 400);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Enter") {
@@ -339,10 +347,8 @@ export function CoverageMap({ compact = false }: CoverageMapProps) {
     };
   }, [compact, uid]);
 
-  const heightClass = compact ? "h-[420px] min-h-[420px]" : "h-[min(72vh,640px)] min-h-[420px]";
-
   return (
-    <div className={`sdn-cov relative overflow-hidden rounded-xl border border-card-border ${heightClass}`}>
+    <div className="sdn-cov relative h-full overflow-hidden rounded-xl border border-card-border">
       <div ref={containerRef} className="absolute inset-0 bg-[#0b1220]" />
 
       <div className="sdn-search pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center px-3">
@@ -353,7 +359,7 @@ export function CoverageMap({ compact = false }: CoverageMapProps) {
               ref={inputRef}
               type="text"
               placeholder="Cidade, CEP ou coordenadas (-23.55, -46.63)"
-              className="min-w-0 flex-1 border-0 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-500"
+              className="min-w-0 flex-1 border-0 bg-transparent text-base text-gray-900 outline-none placeholder:text-gray-500"
               autoComplete="off"
             />
           </div>
@@ -364,46 +370,51 @@ export function CoverageMap({ compact = false }: CoverageMapProps) {
         </div>
       </div>
 
-      <div className="absolute left-3 top-14 z-10 rounded-lg border border-card-border bg-card/95 px-3 py-2 text-xs font-semibold text-foreground backdrop-blur-sm sm:top-3">
+      <div className="map-status-bar absolute left-3 top-14 z-10 rounded-xl border border-card-border bg-card/95 px-4 py-3 text-foreground backdrop-blur-sm sm:top-3">
         Cobertura:{" "}
-        <span ref={pillRef} className="pill warn ml-1">
+        <span ref={pillRef} className="pill warn ml-1.5">
           clique no mapa
         </span>
       </div>
 
-      <div className="absolute right-3 top-3 z-10 rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-xs text-white backdrop-blur-md">
-        <p className="mb-1 font-bold">Precisão RTK</p>
-        <p className="flex items-center gap-2">
-          <span id={`${uid}-dot-2cm`} className="h-3.5 w-3.5 rounded-full border border-white/20" /> 2 cm
+      <div className="absolute right-3 top-3 z-10 rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-white backdrop-blur-md">
+        <p className="map-legend-title mb-2">Precisão RTK</p>
+        <p className="map-legend-item flex items-center gap-2.5">
+          <span id={`${uid}-dot-2cm`} className="h-4 w-4 shrink-0 rounded-full border border-white/20" /> 2 cm
         </p>
-        <p className="mt-1 flex items-center gap-2">
-          <span id={`${uid}-dot-10cm`} className="h-3.5 w-3.5 rounded-full border border-white/20" /> 10 cm
+        <p className="map-legend-item mt-2 flex items-center gap-2.5">
+          <span id={`${uid}-dot-10cm`} className="h-4 w-4 shrink-0 rounded-full border border-white/20" /> 10 cm
         </p>
       </div>
 
-      <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-3">
+      <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-5">
         <button
           id={`${uid}-zoom-in`}
           type="button"
           aria-label="Aproximar"
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-card-border bg-card text-foreground hover:border-accent hover:bg-accent/20"
+          className="flex flex-col items-center gap-1.5 rounded-xl border border-card-border bg-card/95 px-4 py-2.5 text-foreground backdrop-blur-sm transition hover:border-brand-geo hover:bg-brand-geo/20"
         >
-          +
+          <span className="flex h-10 w-10 items-center justify-center text-xl font-semibold leading-none">
+            +
+          </span>
+          <span className="map-toolbar-label">Aproximar</span>
         </button>
         <button
           id={`${uid}-zoom-out`}
           type="button"
           aria-label="Afastar"
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-card-border bg-card text-foreground hover:border-accent hover:bg-accent/20"
+          className="flex flex-col items-center gap-1.5 rounded-xl border border-card-border bg-card/95 px-4 py-2.5 text-foreground backdrop-blur-sm transition hover:border-brand-geo hover:bg-brand-geo/20"
         >
-          −
+          <span className="flex h-10 w-10 items-center justify-center text-xl font-semibold leading-none">
+            −
+          </span>
+          <span className="map-toolbar-label">Afastar</span>
         </button>
       </div>
 
-      <p className="absolute bottom-2 right-3 z-10 text-[10px] text-white/50">
+      <p className="absolute bottom-2 right-3 z-10 text-xs text-white/55">
         Dados: Geodnet / RTK Data
       </p>
-
     </div>
   );
 }

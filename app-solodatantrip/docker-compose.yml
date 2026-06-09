@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: datageo
+      POSTGRES_PASSWORD: datageo
+      POSTGRES_DB: datageo
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://datageo:datageo@db:5432/datageo
+      DIRECT_URL: postgresql://datageo:datageo@db:5432/datageo
+      AUTH_SECRET: dev-docker-auth-secret-min-16-chars
+    depends_on:
+      - db
+
+volumes:
+  pgdata:

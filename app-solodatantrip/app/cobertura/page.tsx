@@ -1,6 +1,10 @@
 import Link from "next/link";
-import { CoverageMapDynamic } from "@/components/coverage-map-dynamic";
+import { CoverageMapViewport } from "@/components/coverage-map-viewport";
 import { SiteHeader } from "@/components/site-header";
+
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const revalidate = 0;
 
 export const metadata = {
   title: "Mapa de cobertura RTK | Datageo Ntrip",
@@ -12,10 +16,10 @@ export default function CoberturaPage() {
   return (
     <>
       <SiteHeader />
-      <main className="pt-24 pb-16">
+      <main className="pt-[6.25rem] pb-16 sm:pt-[7.25rem] lg:pt-[8rem]">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="mb-8 max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-widest text-accent">
+            <p className="text-xs font-semibold uppercase tracking-widest text-brand-geo">
               Cobertura GNSS
             </p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
@@ -28,16 +32,16 @@ export default function CoberturaPage() {
                 href="https://rtkdata.com/coverage/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-accent hover:underline"
+                className="text-brand-geo hover:underline"
               >
                 Geodnet / RTK Data
               </a>
               .
             </p>
           </div>
-          <CoverageMapDynamic />
+          <CoverageMapViewport />
           <p className="mt-6 text-center text-sm text-muted">
-            <Link href="/#contato" className="text-accent hover:underline">
+            <Link href="/#contato" className="text-brand-geo hover:underline">
               Sem cobertura na sua área?
             </Link>{" "}
             — solicite expansão ou avaliação gratuita.

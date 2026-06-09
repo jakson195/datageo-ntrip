@@ -1,6 +1,20 @@
 import Link from "next/link";
 import type { SessionUser } from "@/lib/auth";
 
+const STATUS_LABEL: Record<SessionUser["subscription"]["status"], string> = {
+  pending: "Pendente",
+  active: "Ativa",
+  suspended: "Suspensa",
+  expired: "Expirada",
+};
+
+const STATUS_CLASS: Record<SessionUser["subscription"]["status"], string> = {
+  pending: "bg-amber-100 text-amber-800",
+  active: "bg-emerald-100 text-emerald-700",
+  suspended: "bg-red-100 text-red-700",
+  expired: "bg-slate-200 text-slate-700",
+};
+
 export function SubscriptionCard({ subscription }: { subscription: SessionUser["subscription"] }) {
   return (
     <section className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-sm">
@@ -11,17 +25,13 @@ export function SubscriptionCard({ subscription }: { subscription: SessionUser["
         </div>
         <div className="flex items-center gap-3">
           <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              subscription.status === "ativo"
-                ? "bg-emerald-100 text-emerald-700"
-                : "bg-red-100 text-red-700"
-            }`}
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_CLASS[subscription.status]}`}
           >
-            {subscription.status === "ativo" ? "Ativo" : "Inativo"}
+            {STATUS_LABEL[subscription.status]}
           </span>
           <Link
-            href="/#planos"
-            className="rounded-xl border border-accent/40 bg-accent/10 px-4 py-2 text-sm font-medium text-accent transition hover:bg-accent/20"
+            href="/area-cliente/planos"
+            className="rounded-xl border border-brand-geo/40 bg-brand-geo/10 px-4 py-2 text-sm font-medium text-brand-geo transition hover:bg-brand-geo/20"
           >
             Ver planos
           </Link>

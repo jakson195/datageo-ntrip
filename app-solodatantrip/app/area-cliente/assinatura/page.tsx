@@ -16,7 +16,7 @@ export default function AssinaturaPage() {
         </p>
         <Link
           href="/#planos"
-          className="mt-4 inline-flex rounded-lg bg-[#1d6ecf] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1558b0]"
+          className="mt-4 inline-flex rounded-lg btn-brand-primary px-4 py-2.5 text-sm"
         >
           Ver planos no site
         </Link>

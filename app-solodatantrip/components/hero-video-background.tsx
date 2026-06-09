@@ -38,7 +38,7 @@ export function HeroVideoBackground() {
         <source src={src} type="video/mp4" />
       </video>
       <div className="hero-video-overlay absolute inset-0" />
-      <div className="hero-rtk-pulse absolute right-[12%] top-[28%] hidden h-48 w-48 rounded-full border border-accent/30 lg:block" />
+      <div className="hero-rtk-pulse absolute right-[12%] top-[28%] hidden h-48 w-48 rounded-full border border-brand-geo/30 lg:block" />
       <div className="hero-rtk-pulse-delay absolute right-[10%] top-[26%] hidden h-64 w-64 rounded-full border border-drone/20 lg:block" />
     </div>
   );

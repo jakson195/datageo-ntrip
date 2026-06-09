@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { BrandLogo } from "./brand-logo";
+import { HardNavLink } from "./hard-nav-link";
 
 const nav = [
   { href: "/#como-funciona", label: "Como funciona" },
-  { href: "/#setores", label: "Setores" },
   { href: "/cobertura", label: "Cobertura" },
-  { href: "/#ntrip", label: "NTRIP" },
+  { href: "/#setores", label: "Setores" },
+  { href: "/#ntrip", label: "Módulos" },
   { href: "/#planos", label: "Planos" },
   { href: "/#faq", label: "FAQ" },
   { href: "/#contato", label: "Contato" },
@@ -12,48 +14,37 @@ const nav = [
 
 export function SiteHeader() {
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-card-border/80 bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15 text-sm text-accent">
-            DG
-          </span>
-          <span>
-            Datageo <span className="text-accent">Ntrip</span>
-          </span>
-        </Link>
-        <nav className="hidden items-center gap-6 text-sm text-muted md:flex">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.06] bg-background/90 backdrop-blur-md">
+      <div className="mx-auto flex h-[5.75rem] max-w-7xl items-center justify-between gap-3 px-4 sm:h-24 sm:gap-5 sm:px-6 lg:h-[6.5rem]">
+        <div className="min-w-0 shrink-0 pr-1">
+          <BrandLogo size="header" showWordmark />
+        </div>
+
+        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-5 xl:flex xl:gap-7">
           {nav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="transition-colors hover:text-foreground"
+              className="whitespace-nowrap text-base font-medium text-muted transition-colors hover:text-foreground lg:text-[17px]"
             >
               {item.label}
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-2">
-          <Link
-            href="https://wa.me/5511999999999"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden rounded-full border border-card-border px-4 py-2 text-sm text-muted transition hover:border-accent/40 hover:text-foreground sm:inline-flex"
-          >
-            WhatsApp
-          </Link>
+
+        <div className="flex shrink-0 items-center gap-2.5 sm:gap-3">
           <Link
             href="/login"
-            className="hidden rounded-full border border-card-border px-4 py-2 text-sm text-muted transition hover:border-accent/40 hover:text-foreground sm:inline-flex"
+            className="rounded-full btn-brand-ghost px-4 py-2.5 text-base font-medium sm:px-5 sm:py-3"
           >
-            Área do cliente
+            Entrar
           </Link>
-          <Link
-            href="/#contato"
-            className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-background transition hover:bg-accent-dim"
+          <HardNavLink
+            href="/cadastro"
+            className="rounded-full btn-brand-primary px-4 py-2.5 text-base font-semibold sm:px-6 sm:py-3"
           >
-            Teste grátis
-          </Link>
+            Trial grátis
+          </HardNavLink>
         </div>
       </div>
     </header>

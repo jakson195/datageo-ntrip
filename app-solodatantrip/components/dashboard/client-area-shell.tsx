@@ -10,7 +10,7 @@ export function ClientAreaShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-[#f3f4f6]">
+    <div className="client-shell flex min-h-screen flex-col">
       <RtkTopBar />
       <div className="flex flex-1 flex-col lg:flex-row">
         <RtkSidebar user={user} />

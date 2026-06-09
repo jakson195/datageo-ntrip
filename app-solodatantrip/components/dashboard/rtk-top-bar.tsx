@@ -1,40 +1,34 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
 
 export function RtkTopBar() {
   return (
-    <header className="flex h-14 items-center justify-between border-b border-[#e5e7eb] bg-white px-4 sm:px-6">
-      <Link href="/" className="flex items-center gap-2 font-semibold text-[#111827]">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1d6ecf] text-xs text-white">
-          DG
-        </span>
-        <span>
-          Datageo <span className="text-[#1d6ecf]">Ntrip</span>
-        </span>
-      </Link>
-      <div className="hidden items-center gap-6 text-sm text-[#4b5563] md:flex">
-        <Link href="/#ntrip" className="hover:text-[#1d6ecf]">
+    <header className="flex h-24 items-center justify-between gap-4 border-b border-surface-border bg-surface-card px-4 sm:px-6 lg:h-[6.5rem]">
+      <BrandLogo href="/" size="header" variant="light" showWordmark />
+      <div className="hidden items-center gap-6 text-base font-medium text-[#4b5563] md:flex">
+        <Link href="/#ntrip" className="hover:text-brand-data">
           Produto
         </Link>
-        <Link href="/#setores" className="hover:text-[#1d6ecf]">
+        <Link href="/#setores" className="hover:text-brand-data">
           Setores
         </Link>
-        <Link href="/#planos" className="hover:text-[#1d6ecf]">
+        <Link href="/#planos" className="hover:text-brand-geo">
           Preços
         </Link>
-        <Link href="/cobertura" className="hover:text-[#1d6ecf]">
+        <Link href="/cobertura" className="hover:text-brand-geo">
           Cobertura
         </Link>
       </div>
       <div className="flex items-center gap-2">
         <Link
           href="/#contato"
-          className="hidden rounded-lg border border-[#d1d5db] px-3 py-1.5 text-xs font-medium text-[#374151] sm:inline-block"
+          className="hidden rounded-lg border border-surface-border px-4 py-2.5 text-base font-medium text-[#374151] sm:inline-block"
         >
           Agendar reunião
         </Link>
         <Link
           href="/#contato"
-          className="rounded-lg bg-[#1d6ecf] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1558b0]"
+          className="rounded-lg btn-brand-primary px-5 py-2.5 text-base font-semibold"
         >
           Teste grátis
         </Link>

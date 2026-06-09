@@ -1,15 +1,24 @@
 @import "tailwindcss";
 
+/* DataGeo NTrip — paleta do logo (Data · Geo · NTrip) */
 :root {
-  --background: #06080c;
-  --foreground: #f4f6f8;
+  --background: #000000;
+  --foreground: #f0f4f8;
   --muted: #8b95a8;
-  --card: #0d1118;
-  --card-border: #1a2230;
-  --accent: #00c2a8;
-  --accent-dim: #00a38d;
-  --accent-glow: rgba(0, 194, 168, 0.25);
-  --drone: #3b9eff;
+  --card: #0a0f18;
+  --card-border: #1a2438;
+  --brand-data: #1a4d8c;
+  --brand-geo: #00c8f0;
+  --brand-geo-dim: #00a8d4;
+  --brand-ntrip: #8fd400;
+  --brand-ntrip-dim: #78bc22;
+  --accent: var(--brand-geo);
+  --accent-dim: var(--brand-geo-dim);
+  --accent-glow: rgba(0, 200, 240, 0.22);
+  --drone: var(--brand-data);
+  --surface-light: #eef2f6;
+  --surface-card: #ffffff;
+  --surface-border: #d8e0eb;
 }
 
 @theme inline {
@@ -18,9 +27,17 @@
   --color-muted: var(--muted);
   --color-card: var(--card);
   --color-card-border: var(--card-border);
+  --color-brand-data: var(--brand-data);
+  --color-brand-geo: var(--brand-geo);
+  --color-brand-geo-dim: var(--brand-geo-dim);
+  --color-brand-ntrip: var(--brand-ntrip);
+  --color-brand-ntrip-dim: var(--brand-ntrip-dim);
   --color-accent: var(--accent);
   --color-accent-dim: var(--accent-dim);
   --color-drone: var(--drone);
+  --color-surface-light: var(--surface-light);
+  --color-surface-card: var(--surface-card);
+  --color-surface-border: var(--surface-border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -35,17 +52,139 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
+/* Tipografia da marca (Data · Geo · NTrip) */
+.brand-wordmark {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.brand-wordmark .brand-data {
+  color: var(--brand-data);
+}
+
+.brand-wordmark .brand-geo {
+  color: var(--brand-geo);
+}
+
+.brand-wordmark .brand-ntrip {
+  color: var(--brand-ntrip);
+}
+
+.brand-wordmark .brand-data,
+.brand-wordmark .brand-geo,
+.brand-wordmark .brand-ntrip {
+  letter-spacing: -0.03em;
+}
+
+.brand-wordmark-on-dark .brand-data {
+  color: #6eb5ff;
+}
+
+.brand-wordmark-on-light .brand-data {
+  color: #1a4d8c;
+}
+
+.brand-gradient-text {
+  background: linear-gradient(
+    90deg,
+    var(--brand-data) 0%,
+    var(--brand-geo) 48%,
+    var(--brand-ntrip) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.brand-gradient-bg {
+  background: linear-gradient(
+    135deg,
+    var(--brand-data) 0%,
+    var(--brand-geo) 50%,
+    var(--brand-ntrip) 100%
+  );
+}
+
+.btn-brand-primary {
+  background: linear-gradient(90deg, var(--brand-geo) 0%, var(--brand-ntrip) 100%);
+  color: #030508;
+  font-weight: 600;
+  transition: filter 0.2s, transform 0.15s;
+}
+
+.btn-brand-primary:hover {
+  filter: brightness(1.1);
+}
+
+.btn-brand-ghost {
+  border: 1px solid rgba(0, 200, 240, 0.45);
+  background: transparent;
+  color: var(--brand-geo);
+  font-weight: 500;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.btn-brand-ghost:hover {
+  background: rgba(0, 200, 240, 0.08);
+  border-color: rgba(0, 200, 240, 0.65);
+}
+
+.btn-brand-outline {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--foreground);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.btn-brand-outline:hover {
+  border-color: rgba(0, 200, 240, 0.35);
+  background: rgba(0, 200, 240, 0.06);
+}
+
+.btn-brand-secondary {
+  border: 1px solid rgba(0, 200, 240, 0.4);
+  background: transparent;
+  color: var(--brand-geo);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.btn-brand-secondary:hover {
+  background: rgba(0, 200, 240, 0.1);
+  border-color: rgba(0, 200, 240, 0.6);
+}
+
+.hero-panel {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(
+    145deg,
+    rgba(10, 15, 24, 0.95) 0%,
+    rgba(6, 8, 12, 0.88) 100%
+  );
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+.hero-feature-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.25);
+  transition: border-color 0.2s;
+}
+
+.hero-feature-card:hover {
+  border-color: rgba(0, 200, 240, 0.25);
+}
+
 .grid-bg {
   background-image:
-    linear-gradient(rgba(0, 194, 168, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 194, 168, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(0, 200, 240, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 200, 240, 0.04) 1px, transparent 1px);
   background-size: 48px 48px;
 }
 
 .hero-glow {
   background:
     radial-gradient(ellipse 80% 60% at 50% -10%, var(--accent-glow), transparent),
-    radial-gradient(ellipse 50% 40% at 90% 20%, rgba(59, 158, 255, 0.12), transparent);
+    radial-gradient(ellipse 50% 40% at 90% 20%, rgba(26, 77, 140, 0.18), transparent),
+    radial-gradient(ellipse 40% 35% at 10% 30%, rgba(143, 212, 0, 0.08), transparent);
 }
 
 @keyframes hero-float {
@@ -88,8 +227,8 @@ body {
 
 .hero-video-overlay {
   background:
-    linear-gradient(105deg, rgba(6, 8, 12, 0.92) 0%, rgba(6, 8, 12, 0.72) 42%, rgba(6, 8, 12, 0.35) 68%, rgba(6, 8, 12, 0.55) 100%),
-    linear-gradient(to top, rgba(6, 8, 12, 0.85), transparent 40%);
+    linear-gradient(105deg, rgba(3, 5, 8, 0.94) 0%, rgba(3, 5, 8, 0.75) 42%, rgba(3, 5, 8, 0.4) 68%, rgba(3, 5, 8, 0.6) 100%),
+    linear-gradient(to top, rgba(3, 5, 8, 0.9), transparent 40%);
 }
 
 @keyframes hero-rtk-pulse {
@@ -109,7 +248,7 @@ body {
 
 .hero-rtk-pulse {
   animation: hero-rtk-pulse 3.5s ease-in-out infinite;
-  box-shadow: 0 0 60px rgba(0, 194, 168, 0.15);
+  box-shadow: 0 0 60px rgba(0, 200, 240, 0.18);
 }
 
 .hero-rtk-pulse-delay {
@@ -136,18 +275,20 @@ body {
 }
 .sdn-cov .pill {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 4px 12px;
   border-radius: 9999px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.9375rem;
   font-weight: 600;
+  line-height: 1.35;
 }
 .sdn-cov .pill.ok {
-  background: rgba(0, 194, 168, 0.2);
-  color: #b7ffd3;
+  background: rgba(143, 212, 0, 0.2);
+  color: #d4ff9a;
 }
 .sdn-cov .pill.warn {
-  background: rgba(59, 158, 255, 0.2);
-  color: #cfe6ff;
+  background: rgba(0, 200, 240, 0.2);
+  color: #b8f0ff;
 }
 .sdn-cov .pill.no {
   background: rgba(239, 68, 68, 0.18);
@@ -161,22 +302,61 @@ body {
     center/contain no-repeat;
 }
 .sdn-cov .sdn-item {
-  padding: 10px 12px;
-  font-size: 12px;
+  padding: 12px 14px;
+  font-size: 0.9375rem;
   font-weight: 500;
+  line-height: 1.4;
   cursor: pointer;
   color: var(--foreground);
 }
-.sdn-cov .sdn-item:hover {
-  background: rgba(0, 194, 168, 0.1);
+
+/* Barra de ferramentas do mapa (zoom, legenda) */
+.sdn-cov .map-toolbar-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--foreground);
 }
 
-/* Área do cliente (estilo RTKdata) */
+.sdn-cov .map-legend-title {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.sdn-cov .map-legend-item {
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.sdn-cov .map-status-bar {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+.sdn-cov .sdn-item:hover {
+  background: rgba(0, 200, 240, 0.1);
+}
+
+/* Área do cliente — sidebar no estilo DataGeo Digital */
 .rtk-sidebar {
-  background: linear-gradient(180deg, #0c2d5c 0%, #0a2347 100%);
+  background: linear-gradient(180deg, #0f2848 0%, #081830 100%);
 }
 .rtk-nav-active {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(0, 200, 240, 0.12);
   color: #fff;
-  border-left: 3px solid #3b9eff;
+  border-left: 3px solid var(--brand-ntrip);
+}
+
+/* Auth / painel claro */
+.auth-shell {
+  background: var(--surface-light);
+}
+
+.auth-card {
+  border: 1px solid var(--surface-border);
+  background: var(--surface-card);
+  box-shadow: 0 8px 40px rgba(15, 23, 42, 0.08);
+}
+
+.client-shell {
+  background: var(--surface-light);
 }

@@ -15,7 +15,7 @@ export default function SuportePage() {
           WhatsApp:{" "}
           <a
             href="https://wa.me/5511999999999"
-            className="font-medium text-[#1d6ecf] hover:underline"
+            className="font-medium text-brand-geo hover:underline"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -23,7 +23,7 @@ export default function SuportePage() {
           </a>
         </p>
         <p>
-          <Link href="/#contato" className="font-medium text-[#1d6ecf] hover:underline">
+          <Link href="/#contato" className="font-medium text-brand-geo hover:underline">
             Formulário de contato no site
           </Link>
         </p>

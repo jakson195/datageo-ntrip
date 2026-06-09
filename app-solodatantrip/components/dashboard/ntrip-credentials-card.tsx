@@ -8,10 +8,10 @@ export function NtripCredentialsCard({ ntrip }: { ntrip: NtripCredentials }) {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <section className="rounded-2xl border-2 border-accent/40 bg-white p-6 shadow-sm sm:p-8">
+    <section className="rounded-2xl border-2 border-brand-geo/40 bg-white p-6 shadow-sm sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/15 text-lg">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-geo/15 text-lg">
             🔑
           </span>
           <div>
@@ -21,7 +21,7 @@ export function NtripCredentialsCard({ ntrip }: { ntrip: NtripCredentials }) {
             </p>
           </div>
         </div>
-        <span className="rounded-full bg-accent/15 px-3 py-1 text-xs font-semibold text-accent">
+        <span className="rounded-full bg-brand-geo/15 px-3 py-1 text-xs font-semibold text-brand-geo">
           Para o equipamento
         </span>
       </div>
@@ -43,7 +43,7 @@ export function NtripCredentialsCard({ ntrip }: { ntrip: NtripCredentials }) {
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="rounded-lg border border-[#d1d9e6] bg-white px-2.5 py-1.5 text-xs text-[#475569] hover:border-accent"
+                className="rounded-lg border border-[#d1d9e6] bg-white px-2.5 py-1.5 text-xs text-[#475569] hover:border-brand-geo"
                 title={showPassword ? "Ocultar" : "Mostrar"}
               >
                 {showPassword ? "Ocultar" : "Ver"}
@@ -67,7 +67,7 @@ function CopyButton({ value }: { value: string }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }}
-      className="rounded-lg border border-[#d1d9e6] bg-white px-2.5 py-1.5 text-xs font-medium text-[#475569] hover:border-accent hover:text-accent"
+      className="rounded-lg border border-[#d1d9e6] bg-white px-2.5 py-1.5 text-xs font-medium text-[#475569] hover:border-brand-geo hover:text-brand-geo"
     >
       {copied ? "✓" : "Copiar"}
     </button>

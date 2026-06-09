@@ -1,31 +1,39 @@
 import { Suspense } from "react";
-import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
+import { HardNavLink } from "@/components/hard-nav-link";
 import { LoginForm } from "@/components/login-form";
+import { getDatabaseConfigStatus } from "@/lib/db/is-database-configured";
+
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const revalidate = 0;
 
 export const metadata = {
-  title: "Login | Datageo Ntrip",
+  title: "Login | DataGeo NTrip",
   description: "Área do cliente — credenciais NTRIP e assinatura.",
 };
 
 export default function LoginPage() {
+  const dbStatus = getDatabaseConfigStatus();
+
   return (
-    <div className="min-h-screen bg-[#eef2f6]">
+    <div className="auth-shell min-h-screen">
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-4 py-12 sm:px-6">
         <div className="mx-auto w-full max-w-md">
-          <Link href="/" className="mb-8 flex items-center justify-center gap-2 font-semibold text-[#0f172a]">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-sm text-white">
-              DG
-            </span>
-            <span>
-              Datageo <span className="text-accent">Ntrip</span>
-            </span>
-          </Link>
+          <div className="mb-8 flex justify-center">
+            <BrandLogo href="/" size="lg" variant="light" showWordmark />
+          </div>
 
-          <div className="rounded-2xl border border-[#d8e0eb] bg-white p-8 shadow-[0_8px_40px_rgba(15,23,42,0.08)]">
+          <div className="auth-card rounded-2xl p-8">
             <h1 className="text-center text-2xl font-bold text-[#0f172a]">Área do cliente</h1>
             <p className="mt-2 text-center text-sm text-[#64748b]">
               Acesse suas credenciais NTRIP e dados da assinatura.
             </p>
+            {!dbStatus.configured && (
+              <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                {dbStatus.friendlyError}
+              </p>
+            )}
             <div className="mt-8">
               <Suspense fallback={<p className="text-center text-sm text-[#64748b]">Carregando…</p>}>
                 <LoginForm />
@@ -33,13 +41,9 @@ export default function LoginPage() {
             </div>
             <p className="mt-6 text-center text-sm text-[#64748b]">
               Não tem conta?{" "}
-              <Link href="/cadastro" className="font-medium text-accent hover:underline">
+              <HardNavLink href="/cadastro" className="font-medium text-brand-geo hover:underline">
                 Criar conta
-              </Link>
-            </p>
-            <p className="mt-3 rounded-lg bg-[#f0fdf9] px-3 py-2 text-center text-xs text-[#64748b]">
-              Demo: <span className="font-mono text-[#0f172a]">cliente@datageo.com.br</span> /{" "}
-              <span className="font-mono text-[#0f172a]">demo123</span>
+              </HardNavLink>
             </p>
           </div>
         </div>

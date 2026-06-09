@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { clientFetch } from "@/lib/client-fetch";
 
-export function RegisterForm() {
-  const router = useRouter();
+type RegisterFormProps = {
+  disabled?: boolean;
+};
+
+export function RegisterForm({ disabled = false }: RegisterFormProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,11 +18,12 @@ export function RegisterForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (disabled) return;
     setError(null);
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/register", {
+      const res = await clientFetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password, confirmPassword }),
@@ -31,8 +35,7 @@ export function RegisterForm() {
         return;
       }
 
-      router.push(data.redirect ?? "/area-cliente/credenciais");
-      router.refresh();
+      window.location.assign(data.redirect ?? "/area-cliente/credenciais");
     } catch {
       setError("Erro de conexão. Tente novamente.");
     } finally {
@@ -51,9 +54,10 @@ export function RegisterForm() {
           type="text"
           autoComplete="name"
           required
+          disabled={disabled || loading}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="mt-1.5 w-full rounded-xl border border-[#d1d9e6] bg-white px-4 py-3 text-sm text-[#0f172a] outline-none ring-accent/30 focus:border-accent focus:ring-2"
+          className="mt-1.5 w-full rounded-xl border border-[#d1d9e6] bg-white px-4 py-3 text-sm text-[#0f172a] outline-none ring-brand-geo/30 focus:border-brand-geo focus:ring-2 disabled:opacity-60"
           placeholder="Seu nome"
         />
       </div>
@@ -66,9 +70,10 @@ export function RegisterForm() {
           type="email"
           autoComplete="email"
           required
+          disabled={disabled || loading}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mt-1.5 w-full rounded-xl border border-[#d1d9e6] bg-white px-4 py-3 text-sm text-[#0f172a] outline-none ring-accent/30 focus:border-accent focus:ring-2"
+          className="mt-1.5 w-full rounded-xl border border-[#d1d9e6] bg-white px-4 py-3 text-sm text-[#0f172a] outline-none ring-brand-geo/30 focus:border-brand-geo focus:ring-2 disabled:opacity-60"
           placeholder="seu@email.com"
         />
       </div>
@@ -81,11 +86,12 @@ export function RegisterForm() {
           type="password"
           autoComplete="new-password"
           required
-          minLength={6}
+          minLength={8}
+          disabled={disabled || loading}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mt-1.5 w-full rounded-xl border border-[#d1d9e6] bg-white px-4 py-3 text-sm text-[#0f172a] outline-none ring-accent/30 focus:border-accent focus:ring-2"
-          placeholder="Mínimo 6 caracteres"
+          className="mt-1.5 w-full rounded-xl border border-[#d1d9e6] bg-white px-4 py-3 text-sm text-[#0f172a] outline-none ring-brand-geo/30 focus:border-brand-geo focus:ring-2 disabled:opacity-60"
+          placeholder="Mín. 8 caracteres, letras e números"
         />
       </div>
       <div>
@@ -97,10 +103,11 @@ export function RegisterForm() {
           type="password"
           autoComplete="new-password"
           required
-          minLength={6}
+          minLength={8}
+          disabled={disabled || loading}
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          className="mt-1.5 w-full rounded-xl border border-[#d1d9e6] bg-white px-4 py-3 text-sm text-[#0f172a] outline-none ring-accent/30 focus:border-accent focus:ring-2"
+          className="mt-1.5 w-full rounded-xl border border-[#d1d9e6] bg-white px-4 py-3 text-sm text-[#0f172a] outline-none ring-brand-geo/30 focus:border-brand-geo focus:ring-2 disabled:opacity-60"
           placeholder="Repita a senha"
         />
       </div>
@@ -113,15 +120,15 @@ export function RegisterForm() {
 
       <button
         type="submit"
-        disabled={loading}
-        className="w-full rounded-xl bg-accent py-3.5 text-sm font-semibold text-white transition hover:bg-accent-dim disabled:opacity-60"
+        disabled={disabled || loading}
+        className="w-full rounded-xl btn-brand-primary py-3.5 text-sm disabled:opacity-60"
       >
-        {loading ? "Criando conta…" : "Criar conta"}
+        {loading ? "A ativar NTRIP…" : "Criar conta e ativar trial"}
       </button>
 
       <p className="text-center text-sm text-[#64748b]">
         Já tem conta?{" "}
-        <Link href="/login" className="font-medium text-accent hover:underline">
+        <Link href="/login" className="font-medium text-brand-geo hover:underline">
           Entrar
         </Link>
       </p>
