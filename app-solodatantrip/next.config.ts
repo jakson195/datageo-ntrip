@@ -2,16 +2,17 @@ import type { NextConfig } from "next";
 import path from "path";
 import { fileURLToPath } from "url";
 
-/** Same as __dirname in next.config.js — pins root to this app (not monorepo parent). */
-const rootDir = path.dirname(fileURLToPath(import.meta.url));
+const appDir = path.dirname(fileURLToPath(import.meta.url));
+/**
+ * Vercel injects NEXT_PRIVATE_OUTPUT_TRACE_ROOT (/vercel/path0).
+ * turbopack.root must match exactly — never set it separately.
+ */
+const tracingRoot =
+  process.env.NEXT_PRIVATE_OUTPUT_TRACE_ROOT?.trim() || appDir;
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  // Vercel sets outputFileTracingRoot via NEXT_PRIVATE_OUTPUT_TRACE_ROOT; keep both identical.
-  outputFileTracingRoot: rootDir,
-  turbopack: {
-    root: rootDir,
-  },
+  outputFileTracingRoot: tracingRoot,
   async headers() {
     return [
       {
