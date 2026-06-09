@@ -7,6 +7,8 @@ const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Vercel sets outputFileTracingRoot via NEXT_PRIVATE_OUTPUT_TRACE_ROOT; keep both identical.
+  outputFileTracingRoot: rootDir,
   turbopack: {
     root: rootDir,
   },
