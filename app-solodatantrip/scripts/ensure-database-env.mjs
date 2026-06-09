@@ -5,12 +5,27 @@ import { execSync } from "node:child_process";
 
 const CONNECT_TIMEOUT = 10;
 
-function syncDatabaseEnv() {
-  if (!process.env.DATABASE_URL?.trim() && process.env.POSTGRES_URL?.trim()) {
-    process.env.DATABASE_URL = process.env.POSTGRES_URL.trim();
+function firstEnv(...keys) {
+  for (const key of keys) {
+    const value = process.env[key]?.trim();
+    if (value) return value;
   }
-  if (!process.env.DIRECT_URL?.trim() && process.env.POSTGRES_URL_NON_POOLING?.trim()) {
-    process.env.DIRECT_URL = process.env.POSTGRES_URL_NON_POOLING.trim();
+  return undefined;
+}
+
+/** Neon/Vercel Storage injects several aliases — map all to Prisma names. */
+function syncDatabaseEnv() {
+  if (!process.env.DATABASE_URL?.trim()) {
+    const runtime = firstEnv("POSTGRES_URL", "POSTGRES_PRISMA_URL", "DATABASE_URL");
+    if (runtime) process.env.DATABASE_URL = runtime;
+  }
+  if (!process.env.DIRECT_URL?.trim()) {
+    const direct = firstEnv(
+      "POSTGRES_URL_NON_POOLING",
+      "DATABASE_URL_UNPOOLED",
+      "POSTGRES_URL_NO_SSL",
+    );
+    if (direct) process.env.DIRECT_URL = direct;
   }
 }
 
