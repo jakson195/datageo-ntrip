@@ -82,6 +82,10 @@ export async function registerUser(
 
   const activation = await ntripSubscriptionActivationService.activateTrialOnSignup(user.id);
   if (!activation.ok) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { deletedAt: new Date() },
+    });
     return { ok: false, error: activation.error || "Não foi possível ativar o trial NTRIP." };
   }
 
