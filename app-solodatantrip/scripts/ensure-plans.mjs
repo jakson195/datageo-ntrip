@@ -4,12 +4,12 @@
  */
 import { PrismaClient } from "@prisma/client";
 
-const PLANS = [
+const DATABASE_PLANS = [
   { slug: "trial", name: "Trial", price: 0, durationDays: 30, maxDevices: 1 },
-  { slug: "mensal", name: "Mensal", price: 149.9, durationDays: 30, maxDevices: 1 },
-  { slug: "trimestral", name: "Trimestral", price: 399.9, durationDays: 90, maxDevices: 2 },
-  { slug: "anual", name: "Anual", price: 1399.9, durationDays: 365, maxDevices: 3 },
-  { slug: "revendedor", name: "Revendedor", price: 4999.9, durationDays: 365, maxDevices: 50 },
+  { slug: "mensal", name: "Plano Mensal", price: 240, durationDays: 30, maxDevices: 1 },
+  { slug: "anual", name: "Plano Anual", price: 2399.76, durationDays: 365, maxDevices: 3 },
+  { slug: "quinquenal", name: "Plano de 5 anos", price: 11520, durationDays: 1825, maxDevices: 5 },
+  { slug: "empresa", name: "Empresa", price: 0, durationDays: 365, maxDevices: 50 },
 ];
 
 function syncDatabaseEnv() {
@@ -37,7 +37,7 @@ async function main() {
   const prisma = new PrismaClient();
   try {
     await prisma.$connect();
-    for (const plan of PLANS) {
+    for (const plan of DATABASE_PLANS) {
       await prisma.plan.upsert({
         where: { slug: plan.slug },
         create: {
@@ -45,13 +45,14 @@ async function main() {
           features: { rtk: true, support: plan.slug !== "trial" },
         },
         update: {
+          name: plan.name,
           price: plan.price,
           durationDays: plan.durationDays,
           maxDevices: plan.maxDevices,
         },
       });
     }
-    console.log(`[ensure-plans] OK — ${PLANS.length} planos`);
+    console.log(`[ensure-plans] OK — ${DATABASE_PLANS.length} planos`);
   } finally {
     await prisma.$disconnect();
   }

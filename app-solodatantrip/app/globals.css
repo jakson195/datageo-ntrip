@@ -265,75 +265,43 @@ body {
   }
 }
 
-/* Mapa de cobertura (MapLibre) */
-.sdn-cov .maplibregl-ctrl-logo {
-  display: none !important;
+/* Planos RTK — cards estilo RTK Data */
+.pricing-card {
+  min-height: 100%;
 }
-.sdn-cov .maplibregl-ctrl-attrib {
+
+.pricing-card-popular {
+  box-shadow: 0 0 48px var(--accent-glow);
+}
+
+.pricing-ribbon {
+  position: absolute;
+  top: 18px;
+  right: -38px;
+  z-index: 2;
+  width: 150px;
+  padding: 6px 0;
+  text-align: center;
   font-size: 10px;
-  background: rgba(0, 0, 0, 0.45) !important;
-}
-.sdn-cov .pill {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  font-size: 0.9375rem;
-  font-weight: 600;
-  line-height: 1.35;
-}
-.sdn-cov .pill.ok {
-  background: rgba(143, 212, 0, 0.2);
-  color: #d4ff9a;
-}
-.sdn-cov .pill.warn {
-  background: rgba(0, 200, 240, 0.2);
-  color: #b8f0ff;
-}
-.sdn-cov .pill.no {
-  background: rgba(239, 68, 68, 0.18);
-  color: #ffc9c9;
-}
-.sdn-cov .sdn-icon {
-  background: #6b7280;
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E")
-    center/contain no-repeat;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E")
-    center/contain no-repeat;
-}
-.sdn-cov .sdn-item {
-  padding: 12px 14px;
-  font-size: 0.9375rem;
-  font-weight: 500;
-  line-height: 1.4;
-  cursor: pointer;
-  color: var(--foreground);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  transform: rotate(45deg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
-/* Barra de ferramentas do mapa (zoom, legenda) */
-.sdn-cov .map-toolbar-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--foreground);
+.pricing-ribbon-popular {
+  background: var(--brand-geo);
+  color: #030508;
 }
 
-.sdn-cov .map-legend-title {
-  font-size: 1rem;
-  font-weight: 700;
+.pricing-ribbon-tco {
+  background: #0f172a;
+  color: #fff;
 }
 
-.sdn-cov .map-legend-item {
-  font-size: 0.9375rem;
-  font-weight: 500;
-}
-
-.sdn-cov .map-status-bar {
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
-.sdn-cov .sdn-item:hover {
-  background: rgba(0, 200, 240, 0.1);
+/* Mapa de cobertura (embed RTKdata) */
+.coverage-embed {
+  background: #0b1220;
 }
 
 /* Área do cliente — sidebar no estilo DataGeo Digital */

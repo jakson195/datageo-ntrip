@@ -1,2 +1,4 @@
 .vercel
 .env*
+.tmp-cookies.txt
+app-solodatantrip/.tmp-cookies.txt

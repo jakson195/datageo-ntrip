@@ -3,55 +3,9 @@ import { CoverageMapViewport } from "./coverage-map-viewport";
 import { HardNavLink } from "./hard-nav-link";
 import { HeroSection } from "./hero-section";
 import { IndustriesSection } from "./industries-section";
+import { PricingPlansSection } from "./pricing-plans-section";
 import { ServiceGuideSection } from "./service-guide-section";
 import { SiteHeader } from "./site-header";
-
-const plans = [
-  {
-    name: "Trial",
-    price: "Grátis",
-    period: " · 30 dias",
-    desc: "Experimente a rede NTRIP na sua região com a sua equipa.",
-    features: [
-      "1 usuário simultâneo",
-      "Caster NTRIP",
-      "Suporte por e-mail",
-      "Sem cartão de crédito",
-    ],
-    cta: "Começar grátis",
-    href: "/cadastro",
-  },
-  {
-    name: "Pro",
-    price: "R$ 199",
-    period: " / mês",
-    desc: "Para equipas de campo e consultorias em crescimento.",
-    features: [
-      "RTK + PPK (RINEX)",
-      "Mapa de cobertura",
-      "Painel do cliente",
-      "Prioridade no suporte",
-    ],
-    highlight: true,
-    badge: "Mais popular",
-    cta: "Assinar Pro",
-    href: "#contato",
-  },
-  {
-    name: "Enterprise",
-    price: "Sob consulta",
-    period: " · contrato anual",
-    desc: "Grandes volumes, SLA e mountpoints dedicados sob medida.",
-    features: [
-      "Vários acessos simultâneos",
-      "Integração via API",
-      "Suporte prioritário",
-      "Gestor de conta dedicado",
-    ],
-    cta: "Falar com vendas",
-    href: "#contato",
-  },
-];
 
 const faqs = [
   {
@@ -126,54 +80,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* Plans */}
-        <section id="planos" className="scroll-mt-32 py-20 sm:py-28">
-          <div className="mx-auto max-w-6xl px-4 text-center sm:px-6">
-            <h2 className="text-3xl font-bold sm:text-4xl">Planos flexíveis</h2>
-            <p className="mx-auto mt-4 max-w-xl text-muted">
-              Trial sem cartão, Pro para equipas em crescimento, Enterprise sob medida.
-            </p>
-            <div className="mt-12 grid gap-6 md:grid-cols-3">
-              {plans.map((plan) => (
-                <article
-                  key={plan.name}
-                  className={`relative flex flex-col rounded-2xl border p-6 text-left ${
-                    plan.highlight
-                      ? "border-brand-geo bg-brand-geo/5 shadow-[0_0_40px_var(--accent-glow)]"
-                      : "border-card-border bg-card"
-                  }`}
-                >
-                  {plan.badge && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full brand-gradient-bg px-3 py-0.5 text-[11px] font-semibold text-[#030508]">
-                      {plan.badge}
-                    </span>
-                  )}
-                  <h3 className="text-lg font-semibold">{plan.name}</h3>
-                  <p className="mt-3">
-                    <span className="text-3xl font-bold">{plan.price}</span>
-                    <span className="text-muted">{plan.period}</span>
-                  </p>
-                  <p className="mt-3 text-sm text-muted">{plan.desc}</p>
-                  <ul className="mt-6 flex-1 space-y-2 text-sm">
-                    {plan.features.map((f) => (
-                      <li key={f} className="flex gap-2">
-                        <span className="text-brand-ntrip">✓</span> {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <HardNavLink
-                    href={plan.href}
-                    className={`mt-8 block rounded-full py-3 text-center text-sm font-medium transition ${
-                      plan.highlight ? "btn-brand-primary" : "btn-brand-outline"
-                    }`}
-                  >
-                    {plan.cta}
-                  </HardNavLink>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
+        <PricingPlansSection />
 
         {/* FAQ */}
         <section id="faq" className="scroll-mt-32 border-t border-card-border py-20 sm:py-28">

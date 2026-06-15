@@ -19,8 +19,3 @@ export function noStoreFetch(input: RequestInfo | URL, init?: NoStoreInit): Prom
     next: { revalidate: 0 },
   });
 }
-
-/** Evita fetch à Geodnet durante `next build` (Vercel Data Cache >2MB) */
-export function isNextProductionBuild(): boolean {
-  return process.env.npm_lifecycle_event === "build";
-}

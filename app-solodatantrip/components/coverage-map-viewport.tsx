@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CoverageMapDynamic } from "./coverage-map-dynamic";
+import { CoverageMapEmbed } from "./coverage-map-embed";
 
 type Props = {
   compact?: boolean;
@@ -37,7 +37,7 @@ export function CoverageMapViewport({ compact, rootMargin = "200px" }: Props) {
   return (
     <div ref={hostRef} className={placeholderClass}>
       {visible ? (
-        <CoverageMapDynamic compact={compact} />
+        <CoverageMapEmbed compact={compact} />
       ) : (
         <div
           className={`flex ${placeholderClass} items-center justify-center rounded-xl border border-card-border bg-card text-sm text-muted`}

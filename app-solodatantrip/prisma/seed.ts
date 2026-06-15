@@ -8,6 +8,7 @@ import {
 import { generateLocalNtripLicense } from "../lib/ntrip/credential-generator";
 import { trialSubscriptionLabel } from "../lib/ntrip/trial-config";
 import { encryptRtkSecret } from "../lib/rtk/crypto";
+import { DATABASE_PLANS } from "../lib/plans-catalog";
 
 loadProjectEnvFiles();
 syncDatabaseEnvFromVercelPostgres();
@@ -22,25 +23,22 @@ for (const warning of dbStatus.warnings) {
 
 const prisma = new PrismaClient();
 
-const PLANS = [
-  { slug: "trial", name: "Trial", price: 0, durationDays: 30, maxDevices: 1 },
-  { slug: "mensal", name: "Mensal", price: 149.9, durationDays: 30, maxDevices: 1 },
-  { slug: "trimestral", name: "Trimestral", price: 399.9, durationDays: 90, maxDevices: 2 },
-  { slug: "anual", name: "Anual", price: 1399.9, durationDays: 365, maxDevices: 3 },
-  { slug: "revendedor", name: "Revendedor", price: 4999.9, durationDays: 365, maxDevices: 50 },
-];
-
 async function main() {
   await prisma.$connect();
 
-  for (const plan of PLANS) {
+  for (const plan of DATABASE_PLANS) {
     await prisma.plan.upsert({
       where: { slug: plan.slug },
       create: {
         ...plan,
         features: { rtk: true, support: plan.slug !== "trial" },
       },
-      update: { price: plan.price, durationDays: plan.durationDays, maxDevices: plan.maxDevices },
+      update: {
+        name: plan.name,
+        price: plan.price,
+        durationDays: plan.durationDays,
+        maxDevices: plan.maxDevices,
+      },
     });
   }
 
@@ -168,7 +166,7 @@ async function main() {
     update: { status: "ONLINE", lastCheckedAt: new Date() },
   });
 
-  console.log(`Seed OK — plans=${PLANS.length} admin=${admin.email}`);
+  console.log(`Seed OK — plans=${DATABASE_PLANS.length} admin=${admin.email}`);
   console.log("Defina ADMIN_PASSWORD em produção (Vercel) e rode npm run db:seed após migrate.");
 }
 

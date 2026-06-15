@@ -13,18 +13,6 @@ const tracingRoot =
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: tracingRoot,
-  async headers() {
-    return [
-      {
-        source: "/api/coverage",
-        headers: [{ key: "Cache-Control", value: "no-store, no-cache, must-revalidate" }],
-      },
-      {
-        source: "/api/geocoding/:path*",
-        headers: [{ key: "Cache-Control", value: "no-store, no-cache, must-revalidate" }],
-      },
-    ];
-  },
   async redirects() {
     return [
       {

@@ -27,14 +27,14 @@ export default function CoberturaPage() {
             </h1>
             <p className="mt-3 text-muted">
               Pesquise sua cidade ou clique no mapa para ver a precisão estimada (2 cm ou
-              10 cm). Dados fornecidos pela rede{" "}
+              10 cm). Mapa interativo da rede{" "}
               <a
                 href="https://rtkdata.com/coverage/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-brand-geo hover:underline"
               >
-                Geodnet / RTK Data
+                RTK Data
               </a>
               .
             </p>
