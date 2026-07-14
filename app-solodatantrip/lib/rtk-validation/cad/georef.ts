@@ -1,6 +1,6 @@
 import { detectSirgasUtmFromSamples, detectSirgasUtmZone, enToLatLon, formatSirgasUtmProjection, latLonToEn, resolveEnToLatLon } from "@/lib/rtk-validation/project-coords";
 import type { CadEntity, CadProject, CadVertex } from "./types";
-import { isLikelyUtmViewport } from "./map-bbox";
+import { isLikelyUtmViewport } from "./utm-bounds";
 
 const SURVEY_LAYER_IDS = new Set(["rtk_points", "ctrl_known", "ctrl_obs", "draw"]);
 

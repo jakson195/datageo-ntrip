@@ -7,6 +7,7 @@ import {
   viewportBbox4326Georef,
   type CadGeorefContext,
 } from "./georef";
+import { isLikelyUtmViewport } from "./utm-bounds";
 
 /** ~50 km × 50 km em UTM 23S (região central BR) — evita viewport fictício (-50…50). */
 export const DEFAULT_BRAZIL_VIEWPORT = {
@@ -16,19 +17,7 @@ export const DEFAULT_BRAZIL_VIEWPORT = {
   maxY: 7_450_000,
 };
 
-export function isLikelyUtmViewport(
-  bounds: Pick<CadViewport, "minX" | "maxX" | "minY" | "maxY">,
-): boolean {
-  const spanX = Math.abs(bounds.maxX - bounds.minX);
-  const spanY = Math.abs(bounds.maxY - bounds.minY);
-  const maxCoord = Math.max(
-    Math.abs(bounds.minX),
-    Math.abs(bounds.maxX),
-    Math.abs(bounds.minY),
-    Math.abs(bounds.maxY),
-  );
-  return maxCoord > 1_000 && spanX > 1 && spanY > 1;
-}
+export { isLikelyUtmViewport };
 
 export function isBboxInBrazil(bbox: {
   minLon: number;
