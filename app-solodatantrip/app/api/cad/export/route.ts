@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import {
-  exportCadProjectDwgBytes,
-  exportCadProjectDxfBytes,
-} from "@/lib/rtk-validation/cad/export-acad";
 import type { CadProject } from "@/lib/rtk-validation/cad/types";
 
 export const runtime = "nodejs";
@@ -32,6 +28,9 @@ export async function POST(request: NextRequest) {
     }
 
     const filename = safeFilename(project.name || "projeto_cad");
+    const { exportCadProjectDxfBytes, exportCadProjectDwgBytes } = await import(
+      "@/lib/rtk-validation/cad/export-acad"
+    );
 
     if (format === "dxf") {
       const bytes = exportCadProjectDxfBytes(project);
