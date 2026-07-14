@@ -18,6 +18,7 @@ function mapPayment(p: Payment): PaymentDto {
     pixQrCodeBase64: p.pixQrCodeBase64,
     pixTicketUrl: p.pixTicketUrl,
     paidAt: p.paidAt?.toISOString() ?? null,
+    createdAt: p.createdAt.toISOString(),
   };
 }
 
@@ -91,6 +92,28 @@ export class PaymentRepository {
     return prisma.payment.count({
       where: { status: "PAID", paidAt: { gte: start, lt: end } },
     });
+  }
+
+  async findByUserId(userId: string, limit = 20): Promise<PaymentDto[]> {
+    const payments = await prisma.payment.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    });
+    return payments.map(mapPayment);
+  }
+
+  async getAnnualRevenue(year: number): Promise<number> {
+    const start = new Date(year, 0, 1);
+    const end = new Date(year + 1, 0, 1);
+    const result = await prisma.payment.aggregate({
+      where: {
+        status: "PAID",
+        paidAt: { gte: start, lt: end },
+      },
+      _sum: { amount: true },
+    });
+    return Number(result._sum.amount ?? 0);
   }
 }
 

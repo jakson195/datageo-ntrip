@@ -2,8 +2,13 @@ import "server-only";
 
 import type { ActivationSource } from "@prisma/client";
 import { subscriptionRepository } from "@/lib/db/repositories/subscription.repository";
-import { ntripSubscriptionActivationService } from "@/lib/ntrip/subscription-activation.service";
-import { suspendRtkLicense } from "@/lib/rtk/expiration-job";
+import { ntripSubscriptionRepository } from "@/lib/db/repositories/ntrip-subscription.repository";
+import {
+  ntripSubscriptionActivationService,
+  type ActivateSubscriptionResult,
+} from "@/lib/ntrip/subscription-activation.service";
+import { suspendRtkLicense, cancelRtkLicense } from "@/lib/rtk/expiration-job";
+import { billingNotificationService } from "@/lib/billing/notification.service";
 import { appendRtkAuditLog } from "@/lib/rtk/audit-log";
 import { prisma } from "@/lib/db/prisma";
 
@@ -13,12 +18,14 @@ export class BillingAutomationService {
     planSlug: string,
     billingSubscriptionId?: string,
     source: ActivationSource = "STRIPE",
-  ): Promise<void> {
+    paymentId?: string,
+  ): Promise<ActivateSubscriptionResult> {
     const result = await ntripSubscriptionActivationService.activateAfterPayment(
       userId,
       planSlug,
       billingSubscriptionId,
       source,
+      paymentId,
     );
 
     if (!result.ok) {
@@ -37,7 +44,7 @@ export class BillingAutomationService {
         source,
         billingSubscriptionId,
       );
-      return;
+      return result;
     }
 
     console.log(
@@ -50,6 +57,16 @@ export class BillingAutomationService {
         licenseId: result.licenseId,
       }),
     );
+
+    return result;
+  }
+
+  async cancelSubscription(userId: string, reason = "Assinatura cancelada"): Promise<void> {
+    const subscription = await ntripSubscriptionRepository.findLatestByUserId(userId);
+    if (subscription) {
+      await ntripSubscriptionRepository.markExpired(subscription.id);
+    }
+    await cancelRtkLicense(userId, reason);
   }
 
   async suspendForNonPayment(userId: string, subscriptionId: string): Promise<void> {
@@ -84,7 +101,11 @@ export class BillingAutomationService {
     }
   }
 
-  async reactivateAfterPayment(userId: string, subscriptionId: string): Promise<void> {
+  async reactivateAfterPayment(
+    userId: string,
+    subscriptionId: string,
+    paymentId?: string,
+  ): Promise<ActivateSubscriptionResult> {
     const sub = await prisma.billingSubscription.findUnique({
       where: { id: subscriptionId },
       include: { plan: true },
@@ -95,27 +116,22 @@ export class BillingAutomationService {
       lastPaymentAt: new Date(),
     });
 
-    await this.activateAfterPayment(
+    return this.activateAfterPayment(
       userId,
       sub?.plan.slug ?? "mensal",
       subscriptionId,
       sub?.provider === "MERCADO_PAGO" ? "MERCADO_PAGO" : "STRIPE",
+      paymentId,
     );
   }
 
   async sendDueReminders(): Promise<number> {
-    const due = await subscriptionRepository.findDueForRenewal(3);
-    for (const sub of due) {
-      console.log(
-        JSON.stringify({
-          service: "billing-automation",
-          event: "payment_reminder",
-          userId: sub.userId,
-          nextBillingAt: sub.nextBillingAt,
-        }),
-      );
+    const subs = await subscriptionRepository.findDueForRenewal(7);
+    let sent = 0;
+    for (const sub of subs) {
+      sent += await billingNotificationService.sendExpiryReminders(sub);
     }
-    return due.length;
+    return sent;
   }
 
   async processOverdueSubscriptions(): Promise<{ suspended: number; retried: number }> {

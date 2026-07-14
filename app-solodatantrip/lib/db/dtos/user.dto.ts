@@ -52,6 +52,7 @@ export interface CreateUserInput {
 }
 
 export interface UpdateUserInput {
+  passwordHash?: string;
   streams?: number;
   expiryDate?: Date | null;
   credentialsActive?: boolean;

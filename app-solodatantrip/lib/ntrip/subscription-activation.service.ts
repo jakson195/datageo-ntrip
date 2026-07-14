@@ -11,11 +11,11 @@ import {
 } from "@/lib/db/repositories/ntrip-subscription.repository";
 import { appendRtkAuditLog } from "@/lib/rtk/audit-log";
 import { rtkProviderService } from "@/lib/rtk/providers/rtk-provider-service";
-import type { RtkLicenseRecord } from "@/lib/rtk/types";
+import type { RtkLicenseRecord, RtkPublicCredentials } from "@/lib/rtk/types";
 import { encryptRtkSecret } from "@/lib/rtk/crypto";
 import { saveRtkLicenseForUser } from "@/lib/users-store";
 import { generateLocalNtripLicense } from "@/lib/ntrip/credential-generator";
-import { isTrialPlan, trialSubscriptionLabel } from "@/lib/ntrip/trial-config";
+import { trialSubscriptionLabel } from "@/lib/ntrip/trial-config";
 
 export type ActivateSubscriptionInput = {
   userId: string;
@@ -28,7 +28,7 @@ export type ActivateSubscriptionInput = {
 };
 
 export type ActivateSubscriptionResult =
-  | { ok: true; subscriptionId: string; licenseId: string }
+  | { ok: true; subscriptionId: string; licenseId: string; credentials: RtkPublicCredentials }
   | { ok: false; error: string };
 
 function buildIdempotencyKey(userId: string, planSlug: string, source: ActivationSource): string {
@@ -43,11 +43,6 @@ async function resolveLicenseRecord(
   user: { name: string; email: string },
   plan: { slug: string; durationDays: number },
 ): Promise<{ ok: true; license: RtkLicenseRecord } | { ok: false; error: string }> {
-  // Trial no cadastro: credenciais locais imediatas (+30 dias do plano)
-  if (input.source === "TRIAL" || isTrialPlan(plan.slug)) {
-    return { ok: true, license: generateLocalNtripLicense(user.email, plan) };
-  }
-
   if (rtkProviderService.isConfigured()) {
     const provisioned = await rtkProviderService.createLicense(
       user.name,
@@ -61,6 +56,7 @@ async function resolveLicenseRecord(
     return { ok: true, license: provisioned.data };
   }
 
+  // Sem API RTK configurada: credenciais locais (dev / fallback)
   return { ok: true, license: generateLocalNtripLicense(user.email, plan) };
 }
 
@@ -160,7 +156,18 @@ export class NtripSubscriptionActivationService {
       },
     });
 
-    return { ok: true, subscriptionId: subscription.id, licenseId: license.licenseId };
+    return {
+      ok: true,
+      subscriptionId: subscription.id,
+      licenseId: license.licenseId,
+      credentials: {
+        username: license.credentials.username,
+        password: license.credentials.password,
+        server: license.credentials.server,
+        port: license.credentials.port,
+        mountpoint: license.credentials.mountpoint,
+      },
+    };
   }
 
   async activateTrialOnSignup(userId: string): Promise<ActivateSubscriptionResult> {
@@ -178,15 +185,18 @@ export class NtripSubscriptionActivationService {
     planSlug: string,
     billingSubscriptionId?: string,
     source: ActivationSource = "STRIPE",
+    paymentId?: string,
   ): Promise<ActivateSubscriptionResult> {
     return this.activateSubscription({
       userId,
       planSlug,
       source,
       billingSubscriptionId,
-      idempotencyKey: billingSubscriptionId
-        ? `pay-${billingSubscriptionId}`
-        : buildIdempotencyKey(userId, planSlug, source),
+      idempotencyKey: paymentId
+        ? `pay-${paymentId}`
+        : billingSubscriptionId
+          ? `pay-${billingSubscriptionId}`
+          : buildIdempotencyKey(userId, planSlug, source),
       ip: "billing-webhook",
     });
   }

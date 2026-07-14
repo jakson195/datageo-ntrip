@@ -138,6 +138,38 @@ export class SubscriptionRepository {
     });
     return sub.retryCount;
   }
+
+  async findLatestByUserId(userId: string): Promise<BillingSubscriptionDto | null> {
+    const sub = await prisma.billingSubscription.findFirst({
+      where: { userId, ...notDeleted },
+      include: { plan: true },
+      orderBy: { createdAt: "desc" },
+    });
+    return sub ? mapSubscription(sub) : null;
+  }
+
+  async findAllByUserId(userId: string): Promise<BillingSubscriptionDto[]> {
+    const subs = await prisma.billingSubscription.findMany({
+      where: { userId, ...notDeleted },
+      include: { plan: true },
+      orderBy: { createdAt: "desc" },
+    });
+    return subs.map(mapSubscription);
+  }
+
+  async cancelById(
+    id: string,
+    extra?: Prisma.BillingSubscriptionUpdateInput,
+  ): Promise<void> {
+    await prisma.billingSubscription.update({
+      where: { id },
+      data: {
+        status: "CANCELLED",
+        cancelledAt: new Date(),
+        ...extra,
+      },
+    });
+  }
 }
 
 export const subscriptionRepository = new SubscriptionRepository();

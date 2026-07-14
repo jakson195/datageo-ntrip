@@ -1,6 +1,7 @@
 "use client";
 
 import type { SessionUser } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 
 export function DashboardHeader({
   user,
@@ -11,9 +12,12 @@ export function DashboardHeader({
   title: string;
   subtitle: string;
 }) {
+  const router = useRouter();
+
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
-    window.location.assign("/login");
+    router.push("/login");
+    router.refresh();
   }
 
   return (
@@ -31,7 +35,7 @@ export function DashboardHeader({
           Sair
         </button>
         <div
-          className="flex h-11 w-11 items-center justify-center rounded-full brand-gradient-bg text-sm font-bold text-[#030508]"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-sm font-bold text-white"
           title={user.name}
         >
           {user.initials}

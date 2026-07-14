@@ -15,7 +15,7 @@ export async function POST() {
     const url = await stripeService.createCustomerPortal(session.id);
     return NextResponse.json({ success: true, url });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Falha ao abrir portal.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Portal indisponível.";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }

@@ -23,13 +23,18 @@ function sanitizeUsernamePart(value: string): string {
   return value.replace(/[^a-z0-9]/gi, "").slice(0, 12).toLowerCase() || "user";
 }
 
+/** Esquema dg_* enviado à Shop API RTKdata no provisionamento. */
+export function generateRtkUsername(email: string): string {
+  const localPart = sanitizeUsernamePart(email.split("@")[0] ?? "user");
+  const suffix = randomBytes(3).toString("hex");
+  return `dg_${localPart}_${suffix}`;
+}
+
 export function generateLocalNtripLicense(
   email: string,
   plan: Pick<Plan, "slug" | "durationDays">,
 ) {
-  const localPart = sanitizeUsernamePart(email.split("@")[0] ?? "user");
-  const suffix = randomBytes(3).toString("hex");
-  const username = `dg_${localPart}_${suffix}`;
+  const username = generateRtkUsername(email);
   const password = randomBytes(9).toString("base64url").slice(0, 12);
   const durationDays = isTrialPlan(plan.slug)
     ? getTrialDurationDays(plan.durationDays)

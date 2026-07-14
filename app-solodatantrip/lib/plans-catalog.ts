@@ -38,6 +38,24 @@ export function formatPlanBrl(value: number, monthly = false): string {
 /** Planos exibidos no site (espelho RTK Data × 6) */
 export const MARKETING_PLANS: MarketingPlan[] = [
   {
+    slug: "trimestral",
+    name: "Plano Trimestral",
+    priceUsdMonthly: 36,
+    compareUsdMonthly: 50,
+    periodLabel: "/ mês",
+    summary: "Economize 10% pagando a cada 3 meses.",
+    features: [
+      "Todos os recursos RTK do plano mensal",
+      "1 licença com renovação trimestral",
+      "Suporte por WhatsApp",
+    ],
+    cta: "Escolha Trimestral",
+    href: "/#contato",
+    billingPriceBrl: brl(36 * 3),
+    durationDays: 90,
+    maxDevices: 2,
+  },
+  {
     slug: "mensal",
     name: "Plano Mensal",
     priceUsdMonthly: 40,

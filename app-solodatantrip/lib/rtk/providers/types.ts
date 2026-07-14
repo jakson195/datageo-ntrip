@@ -7,6 +7,9 @@ export interface RtkProvisionParams {
   customerEmail: string;
   plan: string;
   idempotencyKey: string;
+  username?: string;
+  country?: string;
+  maxConnections?: number;
 }
 
 export interface RtkRenewParams {
@@ -15,6 +18,9 @@ export interface RtkRenewParams {
   plan: string;
   previousLicenseId: string | null;
   idempotencyKey: string;
+  username?: string;
+  country?: string;
+  maxConnections?: number;
 }
 
 export interface RtkProvider {

@@ -1,18 +1,21 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { SessionUser } from "@/lib/auth";
 
-const navItems = [
-  { href: "/area-cliente", label: "Painel", icon: "▦" },
-  { href: "/area-cliente/credenciais", label: "Credenciais RTK", icon: "◎" },
-  { href: "/area-cliente/uso", label: "Uso RTK", icon: "↗" },
-  { href: "/area-cliente/pedidos", label: "Seus pedidos", icon: "☰" },
-  { href: "/area-cliente/assinatura", label: "Comprar assinatura", icon: "＋" },
-  { href: "/area-cliente/conta", label: "Detalhes da conta", icon: "👤" },
-  { href: "/area-cliente/endereco", label: "Editar endereço", icon: "⌂" },
-  { href: "/area-cliente/suporte", label: "Suporte", icon: "?" },
+const navKeys = [
+  { href: "/area-cliente" as const, key: "panel" },
+  { href: "/area-cliente/credenciais" as const, key: "credentials" },
+  { href: "/area-cliente/validacao-rtk" as const, key: "rtkValidation" },
+  { href: "/area-cliente/cad" as const, key: "cadEnvironment" },
+  { href: "/area-cliente/fotogrametria" as const, key: "photogrammetry" },
+  { href: "/area-cliente/uso" as const, key: "usage" },
+  { href: "/area-cliente/pedidos" as const, key: "orders" },
+  { href: "/area-cliente/assinatura" as const, key: "subscription" },
+  { href: "/area-cliente/conta" as const, key: "account" },
+  { href: "/area-cliente/endereco" as const, key: "address" },
+  { href: "/area-cliente/suporte" as const, key: "support" },
 ] as const;
 
 function isActive(pathname: string, href: string): boolean {
@@ -21,22 +24,24 @@ function isActive(pathname: string, href: string): boolean {
 }
 
 export function RtkSidebar({ user }: { user: SessionUser }) {
+  const t = useTranslations("dashboard");
   const pathname = usePathname();
+  const router = useRouter();
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
-    window.location.assign("/login");
+    router.push("/login");
   }
 
   return (
     <aside className="rtk-sidebar flex w-full shrink-0 flex-col text-white lg:w-[260px]">
       <div className="border-b border-white/10 px-5 py-5">
-        <p className="text-sm text-white/70">Olá</p>
+        <p className="text-sm text-white/70">{t("hello")}</p>
         <p className="mt-1 truncate text-base font-semibold">{user.name}</p>
       </div>
 
       <nav className="flex-1 space-y-0.5 px-2 py-4">
-        {navItems.map((item) => {
+        {navKeys.map((item) => {
           const active = isActive(pathname, item.href);
           return (
             <Link
@@ -47,9 +52,9 @@ export function RtkSidebar({ user }: { user: SessionUser }) {
               }`}
             >
               <span className="text-base opacity-80" aria-hidden>
-                {item.icon}
+                ◎
               </span>
-              {item.label}
+              {t(`nav.${item.key}`)}
             </Link>
           );
         })}
@@ -61,7 +66,7 @@ export function RtkSidebar({ user }: { user: SessionUser }) {
           <span className="text-base opacity-80" aria-hidden>
             ⎋
           </span>
-          Sair
+          {t("logout")}
         </button>
       </nav>
     </aside>

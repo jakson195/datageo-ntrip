@@ -50,6 +50,7 @@ export interface PaymentDto {
   pixQrCodeBase64: string | null;
   pixTicketUrl: string | null;
   paidAt: string | null;
+  createdAt: string;
 }
 
 export interface InvoiceDto {
@@ -65,7 +66,9 @@ export interface InvoiceDto {
 export interface FinanceDashboardDto {
   mrr: number;
   arr: number;
+  annualRevenue: number;
   activeCustomers: number;
+  trialCustomers: number;
   churnRate: number;
   monthlyRevenue: number;
   overdueAmount: number;
@@ -90,6 +93,19 @@ export interface PixPaymentResult {
   expiresAt: string;
 }
 
+export interface MpCheckoutResult {
+  url: string;
+  preferenceId: string;
+  paymentId: string;
+  subscriptionId: string;
+}
+
+export interface MpRecurringResult {
+  url: string;
+  preapprovalId: string;
+  subscriptionId: string;
+}
+
 export interface GnssCredentials {
   host: string;
   port: string;
@@ -97,6 +113,20 @@ export interface GnssCredentials {
   password: string;
   mountpoint: string;
 }
+
+export interface MpDirectCardPaymentResult {
+  status: "approved" | "pending" | "in_process";
+  paymentId: string;
+  subscriptionId: string;
+  mpPaymentId: string;
+  statusDetail: string | null;
+  credentials?: GnssCredentials;
+}
+
+import type {
+  ClientPaymentHistoryItem,
+  ClientSubscriptionOverview,
+} from "@/lib/billing/client-types";
 
 export interface NtripTestResult {
   success: boolean;

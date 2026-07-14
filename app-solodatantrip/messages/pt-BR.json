@@ -1,0 +1,1267 @@
+{
+  "metadata": {
+    "title": "DataGeo NTrip | NTRIP e correção RTK",
+    "description": "Rede de correção GNSS (NTRIP/RTK) para drones e receptores. Plataforma DataGeo NTrip.",
+    "loginTitle": "Login | DataGeo NTrip",
+    "loginDescription": "Área do cliente — credenciais NTRIP e assinatura.",
+    "registerTitle": "Cadastro | DataGeo NTrip",
+    "registerDescription": "Crie sua conta e acesse suas credenciais RTK.",
+    "coverageTitle": "Mapa de cobertura RTK | Datageo Ntrip",
+    "coverageDescription": "Consulte a cobertura de correção GNSS (2 cm e 10 cm) por região. Dados Geodnet, mesma base do mapa RTK Data.",
+    "dashboardTitle": "Painel | Datageo Ntrip",
+    "credentialsTitle": "Credenciais RTK | Datageo Ntrip",
+    "supportTitle": "Suporte | Datageo Ntrip",
+    "subscriptionTitle": "Comprar assinatura | Datageo Ntrip"
+  },
+  "common": {
+    "loading": "Carregando…",
+    "brandData": "Data",
+    "brandGeo": "Geo",
+    "brandNtrip": "NTrip",
+    "rightsReserved": "Todos os direitos reservados.",
+    "monthlySuffix": "/ mês",
+    "perMonth": "{price} / mês",
+    "redirecting": "A redirecionar…",
+    "whatsapp": "WhatsApp",
+    "copy": "Copiar",
+    "show": "Ver",
+    "hide": "Ocultar",
+    "dash": "—"
+  },
+  "header": {
+    "howItWorks": "Como funciona",
+    "coverage": "Cobertura",
+    "sectors": "Setores",
+    "modules": "Módulos",
+    "plans": "Planos",
+    "faq": "FAQ",
+    "contact": "Contato",
+    "login": "Entrar",
+    "freeTrial": "Trial grátis"
+  },
+  "hero": {
+    "tagline": "[ Campo · Escritório · Cliente — num só lugar ]",
+    "title": "Plataforma NTRIP para",
+    "titleHighlight": "drones e topografia",
+    "description": "Caster NTRIP, credenciais no painel, mapa de cobertura e suporte em campo — do cadastro à correção RTK no rover ou no drone, sem base própria em cada obra.",
+    "features": {
+      "RTK": "Precisão centimétrica",
+      "NTRIP": "Correção em tempo real",
+      "SaaS": "Painel do cliente",
+      "PPK": "RINEX sob demanda"
+    },
+    "stats": {
+      "trial": {
+        "value": "30 dias",
+        "label": "Avaliação grátis"
+      },
+      "precision": {
+        "value": "1–2 cm",
+        "label": "Precisão RTK"
+      },
+      "coverage": {
+        "value": "BR",
+        "label": "Cobertura nacional"
+      },
+      "caster": {
+        "value": "24/7",
+        "label": "Caster NTRIP"
+      }
+    },
+    "ctaTrial": "Trial grátis 30 dias",
+    "ctaModules": "Ver módulos"
+  },
+  "serviceGuide": {
+    "eyebrow": "Guia da plataforma",
+    "title": "NTRIP e RTK, explicados de forma directa",
+    "description": "Estrutura pensada para consultorias e equipas que precisam de correção GNSS em campo, credenciais simples e suporte técnico no dia a dia.",
+    "blocks": {
+      "fluxo": {
+        "title": "Do cadastro ao fix RTK",
+        "subtitle": "Fluxo em 4 etapas — da ativação ao trabalho em campo",
+        "items": {
+          "01": "Ative o acesso NTRIP e configure caster, mountpoint e credenciais no rover ou app do drone.",
+          "02": "Execute o voo ou a coleta com fix RTK ativo; exporte as fotos com metadados GNSS quando possível.",
+          "03": "Conecte o rover ou o drone ao caster NTRIP e aguarde o fix RTK antes de iniciar a coleta.",
+          "04": "Trabalhe com precisão centimétrica; exporte pontos e linhas para CAD/GIS ou grave logs para PPK."
+        }
+      },
+      "pacote": {
+        "title": "O que você recebe",
+        "subtitle": "Serviços digitais incluídos na plataforma Datageo Ntrip",
+        "items": {
+          "RTK": "Caster NTRIP com correções RTCM 3.x e suporte a múltiplas constelações GNSS.",
+          "Web": "Credenciais, mountpoint e status da conexão em um painel simples.",
+          "Geo": "Referência SIRGAS2000 e orientação para grids locais (mediante plano).",
+          "Dados": "RINEX sob demanda para auditoria ou PPK quando contratado.",
+          "Suporte": "Atendimento por WhatsApp com especialistas em campo e drone."
+        }
+      },
+      "checklist": {
+        "title": "Checklist antes de começar",
+        "subtitle": "Evite retrabalho no campo",
+        "items": {
+          "HW": "Receptor multibanda com cliente NTRIP ou drone RTK com link de dados estável (4G/5G).",
+          "Céu": "Horizonte desobstruído, antena nivelada e altura de bastão calibrada no software.",
+          "Foto": "Sobreposição frontal/lateral adequada, foco nítido e sem motion blur excessivo.",
+          "Rede": "Internet para RTK em tempo real; sem cobertura, grave logs para PPK posterior."
+        }
+      }
+    },
+    "ctaModules": "Ver todos os módulos",
+    "ctaExpert": "Falar com especialista"
+  },
+  "industries": {
+    "eyebrow": "Aplicações",
+    "title": "Onde a correção NTRIP faz diferença",
+    "description": "Cada setor usa correção GNSS, drone ou os dois. Escolha o que combina com sua operação — sem pacote genérico único.",
+    "sectors": {
+      "topografia": {
+        "title": "Topografia",
+        "headline": "Levantamentos sem retrabalho em campo",
+        "body": "Estações totais e GNSS com NTRIP para pontos, linhas e superfícies com fix confiável. Exporte para CAD/GIS sem perder tempo com base própria em cada frente."
+      },
+      "agronomia": {
+        "title": "Agronomia",
+        "headline": "Plantio e pulverização no traço certo",
+        "body": "Tratores com GPS/RTK e voos de drone com fix em tempo real. Correção NTRIP na lavoura para plantio, pulverização e manejo preciso."
+      },
+      "obras": {
+        "title": "Obras e infraestrutura",
+        "headline": "Máquinas e medições no projeto, não no chute",
+        "body": "Escavadeiras, motoniveladoras e máquinas com posição centimétrica. Acompanhamento de obra e volumetria com GNSS corrigido."
+      },
+      "drone": {
+        "title": "Mapeamento com drone",
+        "headline": "Voos com fix RTK no ar",
+        "body": "Matrice, Phantom RTK e payloads LiDAR com correção NTRIP em tempo real. Ideal para inspeções, cadastro e levantamentos sem base local."
+      }
+    },
+    "ctaTrial": "Trial grátis 30 dias",
+    "ctaDetail": "Ver módulos em detalhe →"
+  },
+  "landing": {
+    "modules": {
+      "eyebrow": "Módulos activos",
+      "title": "Rede NTRIP + dashboard",
+      "description": "Caster NTRIP com credenciais no painel, mapa de cobertura interactivo e suporte para drones, máquinas e receptores GNSS em tempo real.",
+      "features": [
+        "Protocolo NTRIP padrão de mercado",
+        "Suporte multi-constelação (GPS, GLONASS, Galileo, BeiDou)",
+        "Planos diário, semanal e mensal",
+        "Mapa de cobertura interativo"
+      ],
+      "mapLabel": "Mapa de cobertura",
+      "mapLink": "Abrir mapa em tela cheia →"
+    },
+    "faq": {
+      "title": "Perguntas frequentes",
+      "items": {
+        "drones": {
+          "q": "Quais drones são compatíveis com NTRIP?",
+          "a": "DJI Enterprise (Matrice, Phantom 4 RTK), drones com receptor externo NTRIP e equipamentos de topografia com cliente NTRIP."
+        },
+        "precision": {
+          "q": "Qual precisão consigo em tempo real?",
+          "a": "Com fix RTK e boa cobertura de rede, é comum atingir 1–2 cm horizontais. A precisão depende do receptor, do ambiente e da qualidade do sinal."
+        },
+        "internet": {
+          "q": "Preciso de internet no campo?",
+          "a": "Sim, para RTK em tempo real via NTRIP. Sem sinal, é possível gravar dados para PPK posterior."
+        }
+      }
+    },
+    "contact": {
+      "title": "Comece com trial grátis de 30 dias",
+      "description": "Crie a conta, teste o caster NTRIP na sua região e aceda às credenciais no painel. Sem cartão de crédito no trial.",
+      "ctaRegister": "Criar conta grátis",
+      "email": "contato@datageontrip.com.br"
+    },
+    "footer": {
+      "ntrip": "NTRIP",
+      "coverage": "Cobertura",
+      "contact": "Contato"
+    }
+  },
+  "coverage": {
+    "eyebrow": "Cobertura GNSS",
+    "title": "Mapa de cobertura RTK",
+    "description": "Pesquise sua cidade ou clique no mapa para ver a precisão estimada (2 cm ou 10 cm). Mapa interativo da rede <link>RTK Data</link>.",
+    "noCoverage": "Sem cobertura na sua área?",
+    "requestExpansion": "— solicite expansão ou avaliação gratuita.",
+    "mapTitle": "Mapa de cobertura RTK",
+    "loading": "A carregar mapa…"
+  },
+  "plans": {
+    "title": "Escolha seu plano de assinatura RTK",
+    "periodLabel": "/ mês",
+    "description": "Obtenha o melhor custo-benefício para dados de alta precisão. Assinatura recorrente via Mercado Pago com 30 dias de trial antes da primeira cobrança.",
+    "trialCta": "Trial grátis por 30 dias",
+    "unsure": "Ainda não tem certeza?",
+    "noCard": "— sem cartão de crédito.",
+    "badges": {
+      "popular": "POPULAR",
+      "tco": "MENOR TCO"
+    },
+    "trial": {
+      "name": "Trial",
+      "summary": "30 dias grátis sem cartão de crédito."
+    },
+    "items": {
+      "mensal": {
+        "name": "Plano Mensal",
+        "summary": "Comece hoje, cancele quando quiser.",
+        "cta": "Escolha Mensal",
+        "features": [
+          "Conjunto completo de recursos RTK, sem limitação de desempenho",
+          "1 licença = 1 fluxo de dados simultâneo",
+          "Troque de dispositivo quando quiser"
+        ]
+      },
+      "anual": {
+        "name": "Plano Anual",
+        "summary": "Economize 34% com acesso ilimitado durante todo o ano.",
+        "cta": "Escolha o plano anual e economize",
+        "features": [
+          "Todos os recursos principais do RTK",
+          "Adicione licenças à medida que sua empresa cresce",
+          "Suporte prioritário"
+        ]
+      },
+      "quinquenal": {
+        "name": "Plano de 5 anos",
+        "summary": "Menor custo total de propriedade em todos os planos.",
+        "cta": "Escolha 5 anos",
+        "features": [
+          "Faça um orçamento e concentre-se no trabalho de campo",
+          "Adicione licenças extras com preço fixo",
+          "Suporte prioritário"
+        ]
+      },
+      "empresa": {
+        "name": "Empresa",
+        "summary": "Preços por volume e faturamento centralizado.",
+        "cta": "Solicite um orçamento",
+        "features": [
+          "Gerente de sucesso dedicado",
+          "Adaptável às suas necessidades",
+          "Aquisição de PO / fatura",
+          "Vários acessos simultâneos"
+        ]
+      }
+    },
+    "errors": {
+      "startFailed": "Não foi possível iniciar a assinatura.",
+      "subscribeFailed": "Erro ao assinar plano."
+    }
+  },
+  "auth": {
+    "clientArea": "Área do cliente",
+    "clientAreaDescription": "Acesse suas credenciais NTRIP e dados da assinatura.",
+    "createAccount": "Criar conta",
+    "createAccountDescription": "Cadastre-se e receba credenciais NTRIP de trial automaticamente na área do cliente.",
+    "noAccount": "Não tem conta?",
+    "hasAccount": "Já tem conta?",
+    "createAccountLink": "Criar conta",
+    "backToSite": "Voltar ao site",
+    "email": "E-mail",
+    "password": "Senha",
+    "fullName": "Nome completo",
+    "confirmPassword": "Confirmar senha",
+    "emailPlaceholder": "seu@email.com",
+    "namePlaceholder": "Seu nome",
+    "passwordPlaceholder": "••••••••",
+    "passwordHint": "Mín. 8 caracteres, letras e números",
+    "confirmPlaceholder": "Repita a senha",
+    "login": "Entrar",
+    "loggingIn": "Entrando…",
+    "register": "Criar conta e ativar trial",
+    "registering": "A ativar NTRIP…",
+    "errors": {
+      "loginFailed": "Não foi possível entrar.",
+      "registerFailed": "Não foi possível criar a conta.",
+      "connection": "Erro de conexão. Tente novamente."
+    }
+  },
+  "dashboard": {
+    "hello": "Olá",
+    "helloUser": "Olá, {name}",
+    "logout": "Sair",
+    "overviewDescription": "Visão geral da sua conta RTK e assinatura.",
+    "nav": {
+      "panel": "Painel",
+      "credentials": "Credenciais RTK",
+      "rtkValidation": "Validação RTK",
+      "cadEnvironment": "Ambiente CAD",
+      "photogrammetry": "Aerofotogrametria",
+      "usage": "Uso RTK",
+      "orders": "Seus pedidos",
+      "subscription": "Comprar assinatura",
+      "account": "Detalhes da conta",
+      "address": "Editar endereço",
+      "support": "Suporte"
+    },
+    "subscription": {
+      "title": "Sua assinatura",
+      "viewPlans": "Ver planos",
+      "status": {
+        "pending": "Pendente",
+        "active": "Ativa",
+        "suspended": "Suspensa",
+        "expired": "Expirada"
+      }
+    },
+    "credentials": {
+      "title": "Credenciais RTK",
+      "description": "Copie usuário, senha e configuração do servidor para o seu equipamento.",
+      "trialActive": "Trial NTRIP ativo",
+      "trialActiveDescription": "Suas credenciais estão prontas. Validade até {date} (30 dias grátis).",
+      "trialExpired": "Trial expirado",
+      "trialExpiredDescription": "O período de avaliação terminou. Escolha um plano em <plansLink>Planos</plansLink> para reativar o acesso NTRIP.",
+      "plansLink": "Planos",
+      "pendingActivation": "Conta aguardando ativação",
+      "pendingActivationDescription": "Seu cadastro foi concluído, mas o trial de 30 dias ainda não foi provisionado. Clique em <activate>Ativar licença RTK</activate> acima para gerar usuário e senha. Enquanto isso, use os dados do servidor abaixo para preparar o equipamento ou <supportLink>fale com o suporte</supportLink>.",
+      "activateLicense": "Ativar licença RTK",
+      "contactSupport": "fale com o suporte",
+      "accountSummary": "Resumo da conta",
+      "simultaneousStreams": "Fluxos simultâneos",
+      "subscriptionValidity": "Validade da assinatura",
+      "plan": "Plano",
+      "status": "Status",
+      "loginData": "Seus dados de login RTK",
+      "passwordProtected": "A senha é protegida no servidor. Use \"Ver\" ou \"Copiar\" para acessá-la com segurança.",
+      "rtkUser": "Usuário RTK",
+      "rtkPassword": "Senha RTK",
+      "serverConfig": "Configuração do servidor",
+      "serverConfigDescription": "Host, porta e ponto de montagem (mountpoint) do caster NTRIP.",
+      "ntripHost": "Host NTRIP",
+      "port": "Porta",
+      "mountpoint": "Mountpoint",
+      "passwordUnavailable": "Senha indisponível",
+      "copyFailed": "Não foi possível copiar",
+      "passwordCopied": "Senha copiada",
+      "ntripCard": {
+        "title": "Suas credenciais NTRIP",
+        "description": "Use estes dados no seu controlador DJI, Emlid ou outro receptor GNSS.",
+        "badge": "Para o equipamento",
+        "server": "Servidor",
+        "mountPoint": "Ponto de montagem",
+        "ntripUser": "Usuário NTRIP",
+        "ntripPassword": "Senha NTRIP"
+      }
+    },
+    "blockReasons": {
+      "trialExpired": "Seu trial NTRIP de 30 dias expirou. Escolha um plano para continuar.",
+      "pending": "Sua assinatura NTRIP ainda não foi ativada.",
+      "suspended": "Sua assinatura NTRIP está suspensa. Regularize o pagamento ou fale com o suporte.",
+      "inactive": "Assinatura NTRIP inativa."
+    },
+    "pages": {
+      "plans": {
+        "title": "Planos",
+        "subtitle": "Conheça opções de assinatura NTRIP",
+        "currentPlan": "Plano atual:",
+        "viewPlans": "Ver planos na landing"
+      },
+      "coverage": {
+        "title": "Cobertura",
+        "subtitle": "Consulte a disponibilidade de correção na sua região",
+        "openFullscreen": "Abrir mapa em tela cheia"
+      },
+      "subscription": {
+        "title": "Comprar assinatura",
+        "description": "Escolha o plano ideal para correção RTK em campo.",
+        "body": "Compare planos mensais, anuais e corporativos na página de preços.",
+        "cta": "Ver planos"
+      },
+      "support": {
+        "title": "Suporte",
+        "description": "Tire dúvidas sobre credenciais RTK, configuração do rover ou assinatura.",
+        "whatsapp": "WhatsApp com especialistas",
+        "contact": "Formulário de contato"
+      },
+      "usage": {
+        "title": "Uso RTK",
+        "description": "Histórico de conexões e consumo de dados NTRIP."
+      },
+      "orders": {
+        "title": "Seus pedidos",
+        "description": "Acompanhe compras e renovações da assinatura RTK."
+      },
+      "account": {
+        "title": "Detalhes da conta",
+        "description": "Dados do seu cadastro na Datageo Ntrip.",
+        "name": "Nome",
+        "email": "E-mail",
+        "subscription": "Assinatura"
+      },
+      "address": {
+        "title": "Editar endereço",
+        "description": "Atualize endereço de faturamento e correspondência."
+      },
+      "network": {
+        "title": "Estado da rede",
+        "subtitle": "Status operacional do serviço de correção",
+        "operational": "Rede operacional",
+        "description": "Caster NTRIP disponível 24/7. Latência e disponibilidade podem variar conforme a região — consulte o mapa de cobertura para detalhes na sua área.",
+        "server": "Servidor",
+        "port": "Porta",
+        "subscription": "Assinatura"
+      },
+      "settings": {
+        "title": "Configuração RTK",
+        "subtitle": "Dados para conectar seu equipamento ao caster NTRIP",
+        "help": "Configure o cliente NTRIP no drone ou receptor com servidor, porta, mountpoint, usuário e senha acima. Em caso de dúvida, fale com o suporte pelo WhatsApp."
+      }
+    },
+    "placeholder": {
+      "comingSoon": "Esta seção estará disponível em breve.",
+      "viewCredentials": "Ver credenciais RTK",
+      "contactSupport": "Falar com suporte"
+    },
+    "topBar": {
+      "product": "Produto",
+      "sectors": "Setores",
+      "pricing": "Preços",
+      "coverage": "Cobertura",
+      "scheduleMeeting": "Agendar reunião",
+      "freeTrial": "Teste grátis"
+    },
+    "license": {
+      "title": "Licença RTK",
+      "online": "Online",
+      "offline": "Offline",
+      "provisioning": "Provisionamento seguro via backend · ambiente {mode}",
+      "production": "Produção",
+      "sandbox": "Sandbox",
+      "licenseId": "ID da licença",
+      "user": "Usuário",
+      "mountpoint": "Mountpoint",
+      "validity": "Validade",
+      "plan": "Plano",
+      "password": "Senha",
+      "activate": "Ativar licença RTK",
+      "provisioningBtn": "Provisionando…",
+      "renew": "Renovar licença",
+      "renewing": "Renovando…",
+      "copyCredentials": "Copiar credenciais",
+      "copying": "Copiando…",
+      "activateFailed": "Falha ao ativar licença",
+      "renewFailed": "Falha ao renovar licença",
+      "copyFailed": "Não foi possível copiar",
+      "licenseRecovered": "Licença recuperada",
+      "licenseActivated": "Licença ativada",
+      "credentialsUpdated": "Suas credenciais RTK foram atualizadas.",
+      "licenseRenewed": "Licença renovada",
+      "newCredentials": "Novas credenciais RTK disponíveis.",
+      "credentialsCopied": "Credenciais copiadas",
+      "clipboardDescription": "Dados RTK copiados para a área de transferência.",
+      "clipboardUser": "Usuário",
+      "clipboardPassword": "Senha",
+      "clipboardServer": "Servidor",
+      "clipboardPort": "Porta"
+    }
+  },
+  "admin": {
+    "subscriptions": {
+      "title": "Assinaturas NTRIP",
+      "subtitle": "Ativação manual e monitoramento de contas pendentes.",
+      "filterPending": "Pendentes",
+      "filterActive": "Ativas",
+      "filterSuspended": "Suspensas",
+      "filterExpired": "Expiradas",
+      "filterAll": "Todas",
+      "loadError": "Erro ao carregar.",
+      "networkError": "Erro de rede.",
+      "activateFailed": "Falha na ativação.",
+      "activating": "Ativando…",
+      "tokenPrompt": "Admin token (ADMIN_SECRET):",
+      "activate": "Ativar",
+      "user": "Usuário",
+      "email": "E-mail",
+      "plan": "Plano",
+      "status": "Status",
+      "ntrip": "NTRIP",
+      "validity": "Validade",
+      "created": "Criado",
+      "actions": "Ações",
+      "empty": "Nenhuma assinatura encontrada."
+    },
+    "finance": {
+      "title": "Dashboard Financeiro RTK SaaS",
+      "subtitle": "MRR, ARR, churn e receita em tempo real",
+      "loadError": "Erro ao carregar dashboard.",
+      "loading": "Carregando dashboard financeiro…",
+      "noData": "Sem dados.",
+      "mrr": "MRR",
+      "arr": "ARR",
+      "monthlyRevenue": "Receita mensal",
+      "overdue": "Inadimplência",
+      "activeCustomers": "Clientes ativos",
+      "activeLicenses": "Licenças RTK",
+      "churn": "Churn",
+      "trialConversion": "Conversão trial",
+      "monthlyGrowth": "Crescimento mensal",
+      "revenueByPlan": "Receita por plano",
+      "paymentsSuffix": "pag.",
+      "newCustomers": "Novos clientes este mês:",
+      "renewals": "Renovações este mês:"
+    }
+  },
+  "rtkValidation": {
+    "pageTitle": "Validação e Ajustamento RTK",
+    "pageDescription": "Valide a qualidade do levantamento GNSS RTK com NTRIP, corrija coordenadas com pontos de controle e exporte resultados.",
+    "projectName": "Nome do projeto",
+    "saveProject": "Salvar projeto",
+    "saving": "Salvando…",
+    "savedSuccess": "Projeto salvo na sua conta.",
+    "saveFailed": "Não foi possível salvar o projeto.",
+    "openProject": "Abrir projeto",
+    "pointsLoaded": "pontos carregados",
+    "projects": {
+      "openTitle": "Projetos salvos",
+      "openHint": "Projetos vinculados à sua conta. Selecione um para continuar.",
+      "emptyList": "Nenhum projeto salvo ainda.",
+      "lastSaved": "Salvo em {date}",
+      "open": "Abrir",
+      "remove": "Excluir",
+      "opened": "Projeto \"{name}\" aberto.",
+      "openFailed": "Não foi possível abrir o projeto.",
+      "deleted": "Projeto removido.",
+      "deleteFailed": "Não foi possível excluir o projeto.",
+      "confirmDelete": "Excluir o projeto \"{name}\"?"
+    },
+    "tabs": {
+      "import": "Importar",
+      "control": "Pontos de controle",
+      "adjust": "Ajustamento",
+      "export": "Exportar",
+      "quality": "Qualidade NTRIP"
+    },
+    "import": {
+      "title": "Importar levantamento",
+      "description": "Carregue arquivos CSV ou TXT com os dados do projeto.",
+      "formatHint": "Formato esperado: ID,DESC,E,N,Z (cabeçalho na primeira linha)",
+      "dropzone": "Clique ou arraste o arquivo aqui",
+      "preview": "Prévia dos dados importados",
+      "swapEn": "Corrigir E ↔ N (E=Este, N=Norte)",
+      "axesGeoreferenced": "E=Este, N=Norte"
+    },
+    "control": {
+      "title": "Pontos de controle",
+      "addPoint": "Adicionar ponto",
+      "addManual": "Inserir manualmente",
+      "addFromImport": "Buscar do levantamento",
+      "importFirst": "Importe o levantamento na aba Importar para buscar pontos observados.",
+      "pointName": "Nome do ponto de controle",
+      "manualEntry": "Inserir manualmente",
+      "fromImport": "Buscar do levantamento",
+      "searchImported": "Buscar ponto importado",
+      "searchPlaceholder": "Filtrar por ID, descrição ou coordenadas…",
+      "noPointsFound": "Nenhum ponto encontrado para esta busca.",
+      "pointsAvailable": "{count} pontos importados — clique para selecionar",
+      "pointsFiltered": "{count} de {total} pontos encontrados",
+      "selectPoint": "Selecionar ponto do levantamento",
+      "selectPointPlaceholder": "Escolha um ponto…",
+      "observedFromImport": "Coordenada observada (RTK) preenchida automaticamente",
+      "swapEnKnown": "Trocar E ↔ N (conhecida)",
+      "swapEnObserved": "Trocar E ↔ N (observada)",
+      "swapAllEn": "Trocar E ↔ N (todos os controles)",
+      "known": "Coordenada conhecida",
+      "observed": "Coordenada observada (RTK)",
+      "horiz": "Erro H",
+      "vert": "Erro V",
+      "globalRms": "RMS global",
+      "exclude": "Excluir do ajuste",
+      "include": "Incluir no ajuste",
+      "remove": "Remover"
+    },
+    "adjust": {
+      "title": "Ajustamento",
+      "description": "Escolha o método de transformação e aplique aos pontos do levantamento.",
+      "translation": "Translação simples (ΔE, ΔN, ΔZ)",
+      "helmert2d": "Helmert 2D (translação, rotação, escala)",
+      "helmert3d": "Helmert 3D (translação, rotação, escala)",
+      "run": "Executar ajustamento",
+      "rmsBefore": "RMS antes",
+      "rmsAfter": "RMS após",
+      "rmsHorizAfter": "Precisão horizontal",
+      "rmsVertAfter": "Precisão vertical"
+    },
+    "export": {
+      "title": "Exportar resultados",
+      "download": "Baixar",
+      "pdf": "Relatório técnico PDF",
+      "pdfGenerating": "Gerando relatório…",
+      "openCad": "Abrir ambiente CAD",
+      "cadHint": "Importe os pontos ajustados no ambiente CAD para desenhar linhas, polilinhas e exportar DXF completo.",
+      "cadHintNoAdjust": "Execute o ajustamento antes para importar coordenadas corrigidas no CAD. Pontos brutos também podem ser abertos."
+    },
+    "map": {
+      "title": "Mapa do levantamento + bases NTRIP",
+      "caster": "Caster",
+      "noCaster": "Caster NTRIP não configurado",
+      "legendSurvey": "Levantamento",
+      "legendObserved": "Controle obs.",
+      "legendKnown": "Controle conhecido",
+      "legendBase": "Base NTRIP",
+      "basesLoading": "Carregando bases NTRIP…",
+      "basesNearby": "{count} bases NTRIP na região",
+      "basesEmpty": "Nenhuma base NTRIP encontrada na sourcetable do caster para esta área.",
+      "coverageTitle": "Cobertura e bases RTKdata (Geodnet)",
+      "pointsOnMap": "{count} pontos do levantamento no mapa"
+    },
+    "quality": {
+      "loading": "Carregando histórico de qualidade…",
+      "empty": "Sem dados de qualidade NTRIP para o período.",
+      "fixRate": "Taxa FIX",
+      "avgSats": "Satélites médios",
+      "avgHdop": "HDOP médio",
+      "uptime": "Disponibilidade",
+      "chartFixRate": "Taxa FIX (14 dias)",
+      "chartPrecision": "Precisão média horizontal",
+      "chartAvailability": "Disponibilidade",
+      "chartLatency": "Latência média"
+    }
+  },
+  "rtkCad": {
+    "pageTitle": "Ambiente CAD",
+    "pageDescription": "Importe pontos do ajustamento RTK, desenhe geometrias e exporte para DXF ou ODS.",
+    "meta": {
+      "adjusted": "Ajustado"
+    },
+    "actions": {
+      "backValidation": "Voltar à validação RTK",
+      "fitView": "Enquadrar vista",
+      "zoomIn": "Mais zoom",
+      "zoomOut": "Menos zoom",
+      "exportDxf": "Exportar DXF",
+      "exportDwg": "Exportar DWG",
+      "exportShp": "Exportar Shapefile",
+      "exportOds": "Exportar ODS",
+      "saveProject": "Salvar projeto",
+      "openProject": "Abrir projeto",
+      "newProject": "Novo projeto"
+    },
+    "export": {
+      "empty": "Nenhuma geometria para exportar.",
+      "error": "Falha ao exportar o arquivo.",
+      "working": "Exportando…"
+    },
+    "project": {
+      "nameLabel": "Nome do projeto",
+      "saved": "Projeto salvo com sucesso.",
+      "saveFailed": "Não foi possível salvar o projeto.",
+      "deleteFailed": "Não foi possível excluir o projeto.",
+      "opened": "Projeto \"{name}\" aberto.",
+      "openFailed": "Não foi possível abrir o projeto selecionado.",
+      "deleted": "Projeto removido.",
+      "autoDraft": "Rascunho guardado neste navegador (por usuário). Projetos salvos ficam na sua conta.",
+      "openTitle": "Projetos salvos",
+      "openHint": "Selecione um projeto para continuar de onde parou.",
+      "emptyList": "Nenhum projeto salvo ainda. Clique em \"Salvar projeto\".",
+      "entities": "{count} elementos",
+      "open": "Abrir",
+      "remove": "Excluir",
+      "lastSaved": "Salvo em {date}",
+      "confirmNew": "Criar novo projeto? Alterações não salvas serão descartadas.",
+      "createdNew": "Novo projeto criado. Importe pontos ou comece a desenhar.",
+      "confirmDelete": "Excluir o projeto \"{name}\"?"
+    },
+    "empty": {
+      "description": "Nenhum dado importado. Execute o ajustamento RTK e clique em \"Abrir ambiente CAD\" na aba Exportar, ou inicie um desenho em branco / importe pontos TXT.",
+      "goValidation": "Ir para validação RTK",
+      "startBlank": "Iniciar desenho em branco"
+    },
+    "tools": {
+      "select": "Selecionar",
+      "pan": "Pan",
+      "line": "Linha",
+      "polyline": "Polilinha",
+      "editPolygon": "Editar polígono",
+      "deletePoint": "Excluir ponto",
+      "editElevation": "Alterar cota",
+      "deletePointHint": "Clique em um ponto no desenho para excluí-lo.",
+      "deletePointMiss": "Nenhum ponto neste clique.",
+      "editElevationHint": "Clique em um ponto no desenho para alterar a cota Z.",
+      "editElevationMiss": "Nenhum ponto neste clique.",
+      "finishPolyline": "Finalizar polilinha",
+      "closePolygon": "Fechar polígono",
+      "closeSelected": "Fechar polígono selecionado",
+      "insertCoords": "Inserir coordenadas"
+    },
+    "layers": {
+      "title": "Camadas",
+      "rasterActive": "mapa ativo",
+      "add": "Nova camada",
+      "active": "Camada ativa",
+      "setActive": "Usar esta camada para novos desenhos",
+      "name": "Nome",
+      "lineColor": "Cor da linha",
+      "fillColor": "Cor do polígono",
+      "textColor": "Cor do texto",
+      "lineWidth": "Espessura da linha",
+      "delete": "Excluir camada",
+      "lockedHint": "Camada do sistema — apenas visibilidade pode ser alterada.",
+      "entityLayer": "Camada do elemento",
+      "deleted": "Camada excluída."
+    },
+    "properties": {
+      "title": "Propriedades",
+      "none": "Selecione um elemento no desenho."
+    },
+    "legend": {
+      "title": "Legenda",
+      "adjusted": "Azul — pontos ajustados do levantamento",
+      "control": "Verde/laranja — pontos de controle e resíduos",
+      "draw": "Amarelo — desenho do usuário"
+    },
+    "hints": {
+      "zoomPan": "Scroll ou botões +/− = zoom · Ferramenta Pan = arrastar"
+    },
+    "grid": {
+      "show": "Malha de coordenadas",
+      "step": "Passo"
+    },
+    "basemap": {
+      "satellite": "Satélite (Google Earth)",
+      "car": "Dados CAR (SICAR)",
+      "anm": "ANM SIGMINE",
+      "hidro": "Cursos d'água (ANA)",
+      "satelliteHint": "Imagens de satélite via Google (com fallback Esri).",
+      "carHint": "Perímetros de imóveis rurais via WMS oficial SICAR/MMA.",
+      "anmHint": "Processos minerários ativos — WMS oficial ANM/SIGMINE.",
+      "hidroHint": "Rede hidrográfica (BHO) — ANA/SNIRH.",
+      "carCredit": "CAR/SICAR (MMA)",
+      "anmCredit": "ANM/SIGMINE",
+      "hidroCredit": "ANA/SNIRH",
+      "carUnavailable": "CAR indisponível nesta área",
+      "anmUnavailable": "ANM indisponível nesta área",
+      "hidroUnavailable": "Hidrografia indisponível nesta área",
+      "importTitle": "Importar dados oficiais",
+      "importHint": "Importa vetores da área visível do mapa para camadas bloqueadas.",
+      "importAnm": "Importar SIGMINE (área visível)",
+      "importHidro": "Importar cursos d'água (área visível)",
+      "importDone": "{count} geometrias importadas — {source}",
+      "importEmpty": "Nenhum dado encontrado na área visível.",
+      "importTooLarge": "Área muito grande — aproxime o zoom antes de importar.",
+      "importError": "Falha ao importar dados geoespaciais.",
+      "needGeoref": "Importe pontos RTK (UTM) e clique em Enquadrar antes de usar CAR/ANM."
+    },
+    "polygon": {
+      "defaultName": "Polígono",
+      "name": "Nome",
+      "vertices": "Vértices",
+      "closed": "Fechado",
+      "yes": "Sim",
+      "no": "Não",
+      "area": "Área",
+      "perimeter": "Perímetro",
+      "edit": {
+        "start": "Editar polígono",
+        "hint": "Arraste os vértices (quadrados). Clique numa aresta para inserir vértice. Selecione um polígono primeiro, se necessário.",
+        "selectFirst": "Selecione um polígono ou polilinha editável no desenho.",
+        "ready": "Polígono selecionado — arraste vértices ou clique numa aresta para inserir ponto.",
+        "pickVertex": "Clique num vértice (quadrado) para editar coordenadas ou excluir.",
+        "vertexLabel": "Vértice {label}",
+        "applyVertex": "Aplicar vértice",
+        "removeVertex": "Excluir vértice",
+        "vertexAdded": "Vértice inserido na aresta.",
+        "vertexRemoved": "Vértice removido.",
+        "vertexSaved": "Coordenadas do vértice atualizadas.",
+        "invalidCoords": "Informe coordenadas E, N e Z numéricas válidas.",
+        "minVertices": "Polígono fechado precisa de pelo menos 3 vértices."
+      }
+    },
+    "point": {
+      "label": "Identificação / rótulo",
+      "elevation": "cota",
+      "applyElevation": "Aplicar cota",
+      "delete": "Excluir ponto",
+      "deleteLocked": "Este ponto está bloqueado (RTK ajustado) e não pode ser excluído.",
+      "deleteLockedHint": "Ponto RTK: a cota Z pode ser alterada acima. Excluir pede confirmação.",
+      "confirmDeleteLocked": "O ponto \"{name}\" veio do ajuste RTK. Excluir mesmo assim?",
+      "deleted": "Ponto excluído.",
+      "elevationSaved": "Cota alterada para {z} m.",
+      "invalidElevation": "Informe uma cota Z numérica válida."
+    },
+    "import": {
+      "title": "Importar dados",
+      "hint": "Pontos de levantamento (TXT, CSV ou Excel) ou ortofoto georreferenciada.",
+      "pointsFile": "Importar pontos TXT / CSV",
+      "excel": "Importar pontos Excel (.xlsx)",
+      "excelHint": "Colunas: Código, Descrição, E (Este), N (Norte), Z (Cota). A primeira aba da planilha é usada.",
+      "txtCsv": "Importar pontos TXT / CSV",
+      "orthophoto": "Importar ortofoto GeoTIFF / imagem",
+      "orthoFormats": "GeoTIFF (.tif) com georreferência embutida, ou JPG/PNG sobre a área UTM visível. ECW não é suportado — converta para .tif.",
+      "working": "Importando…",
+      "pointsOk": "{count} pontos importados de {name}.",
+      "orthoOk": "Ortofoto \"{name}\" carregada.",
+      "noPoints": "Nenhum ponto válido no arquivo.",
+      "needGeoref": "Importe pontos UTM georreferenciados ou enquadre a vista em coordenadas UTM antes da ortofoto.",
+      "orthoFormat": "Use GeoTIFF (.tif), JPG ou PNG.",
+      "ecwUnsupported": "ECW não é suportado neste ambiente. Converta para GeoTIFF (.tif) ou JPG/PNG georreferenciado.",
+      "error": "Falha na importação."
+    },
+    "hypsometric": {
+      "title": "Mapa hipsométrico",
+      "hint": "Interpola cotas Z (IDW) e gera mapa colorido com escala de cores.",
+      "generate": "Gerar mapa",
+      "generating": "Gerando…",
+      "clear": "Remover mapa",
+      "showLegend": "Exibir escala de cores",
+      "error": "Falha ao gerar mapa hipsométrico.",
+      "generated": "{points} pontos · cotas {zMin}–{zMax} m"
+    },
+    "memorial": {
+      "title": "Memorial descritivo",
+      "hint": "Selecione um polígono fechado e gere o documento Word (.docx) no padrão REV3.",
+      "kind": "Tipo de memorial",
+      "kindRetificacao": "Retificação de área",
+      "kindDesmembramento": "Desmembramento de área",
+      "kindDemarcacao": "Demarcação",
+      "kindUnificacao": "Unificação de área",
+      "kindOutro": "Outro (personalizado)",
+      "kindCustom": "Descrição do tipo (ex.: retificação parcial)",
+      "registration": "Matrícula / Registro de Imóveis",
+      "owner": "Proprietário",
+      "municipality": "Município",
+      "state": "UF",
+      "appNote": "Observação APP",
+      "footerSection": "Rodapé (escritório e responsável técnico)",
+      "lawFirmName": "Escritório de advocacia",
+      "lawFirmCnpj": "CNPJ do escritório",
+      "technicalName": "Responsável técnico",
+      "technicalCrea": "CREA / registro profissional",
+      "crsLabel": "Sistema de referência geodésica",
+      "projectionNote": "Nota de projeção (UTM)",
+      "generateWord": "Gerar memorial Word",
+      "generating": "Gerando documento…",
+      "needClosed": "Feche o polígono antes de gerar o memorial."
+    },
+    "contour": {
+      "title": "Curvas de nível",
+      "hint": "Interpola cotas Z dos pontos RTK (IDW) e gera curvas de nível automáticas.",
+      "points": "{count} pontos com cota",
+      "interval": "Intervalo entre curvas (m)",
+      "generate": "Gerar curvas",
+      "generating": "Interpolando…",
+      "clear": "Limpar curvas",
+      "needPoints": "Importe pelo menos 3 pontos RTK com cota Z.",
+      "error": "Falha ao gerar curvas de nível.",
+      "generated": "{count} linhas · {levels} níveis · cotas {zMin}–{zMax} m"
+    },
+    "tin": {
+      "title": "Triangulação TIN",
+      "hint": "Gera malha triangular (TIN) a partir dos pontos com cota. Use \"Desativar\" para remover.",
+      "generate": "Gerar triangulação",
+      "generating": "Triangulando…",
+      "clear": "Desativar triangulação",
+      "needPoints": "Importe pelo menos 3 pontos RTK com cota Z.",
+      "error": "Falha na triangulação TIN.",
+      "generated": "{triangles} triângulos · {edges} arestas · {points} pontos"
+    },
+    "ai": {
+      "title": "Assistente IA",
+      "subtitle": "Linguagem natural · voz · múltiplas ações automáticas",
+      "openChat": "Assistente IA",
+      "close": "Fechar assistente",
+      "welcome": "Descreva o que deseja fazer no desenho. A IA analisa o contexto do projeto e executa as ferramentas do CAD — como no Cursor.",
+      "contextHint": "A IA recebe pontos, camadas, seleção, TIN, curvas de nível e sistema de coordenadas do desenho atual.",
+      "placeholder": "Ex.: Crie polígono com os pontos selecionados, calcule a área e coloque no centro",
+      "actionsRun": "Ações executadas",
+      "clearHistory": "Limpar histórico da conversa",
+      "clearHistoryShort": "Limpar",
+      "send": "Enviar",
+      "voice": "Comando de voz",
+      "listening": "Ouvindo…",
+      "processing": "Interpretando…",
+      "tts": "Voz de resposta",
+      "attach": "Anexar arquivo",
+      "csv": "CSV",
+      "fileAttached": "Arquivo {name} anexado.",
+      "fileReady": "Anexo: {name}",
+      "csvAttached": "Arquivo {name} anexado.",
+      "csvReady": "Arquivo pronto — envie o comando de importação.",
+      "interpretError": "Falha ao interpretar o comando.",
+      "speechUnsupported": "Reconhecimento de voz não disponível neste navegador.",
+      "enterHint": "Enter envia · Shift+Enter nova linha",
+      "example1": "Crie um polígono com os pontos P1, P2, P3 e P4",
+      "example2": "Importe o KMZ, gere TIN e curvas de nível de 1 metro",
+      "example3": "Calcule a área da poligonal selecionada e coloque texto no centro",
+      "example4": "Ligue todos os pontos · Gere o memorial descritivo",
+      "quick": {
+        "area": "Calcular área",
+        "areaNeedPolygon": "Selecione um polígono fechado no desenho antes de calcular a área.",
+        "distance": "Distância P1–P2",
+        "renamePoint": "Renomear ponto",
+        "coords": "Coordenadas do ponto",
+        "hypsometric": "Mapa hipsométrico",
+        "text": "Adicionar texto",
+        "measure": "Medir",
+        "pointId": "Renumerar pontos",
+        "importKml": "Importar KML",
+        "importKmz": "Importar KMZ",
+        "importKmlCmd": "Importar arquivo anexado",
+        "exportKml": "Exportar KML",
+        "exportKmz": "Exportar KMZ",
+        "tin": "Triangulação",
+        "removeTin": "Desativar TIN",
+        "contourLabel": "Cota curva"
+      }
+    },
+    "commands": {
+      "title": "Comandos CAD",
+      "hint": "Ações rápidas — não precisa de OpenAI.",
+      "textLabel": "Texto no desenho",
+      "textPlaceholder": "Ex.: Lote 01, Área 1250 m²",
+      "textPrompt": "Texto a inserir no desenho",
+      "applyText": "Adicionar texto no desenho",
+      "working": "Executando…",
+      "error": "Falha ao executar o comando.",
+      "importExcelOk": "{count} pontos importados de {name}.",
+      "pointOps": {
+        "title": "Operações em pontos",
+        "hint": "Selecione um ponto no desenho ou informe o rótulo (P1, V-01…).",
+        "pointRef": "Ponto (rótulo)",
+        "pointRefPlaceholder": "Ex.: P1 ou P61",
+        "newName": "Novo nome",
+        "newZ": "Nova cota Z (m)",
+        "rename": "Renomear",
+        "applyZ": "Aplicar cota",
+        "delete": "Excluir ponto",
+        "needPoint": "Selecione um ponto ou informe o rótulo.",
+        "needRename": "Informe o ponto e o novo nome.",
+        "invalidZ": "Informe uma cota Z numérica válida.",
+        "locked": "Ponto RTK: cota editável; exclusão requer confirmação.",
+        "confirmDeleteLocked": "O ponto \"{name}\" veio do ajuste RTK. Excluir mesmo assim?"
+      },
+      "distanceOps": {
+        "title": "Distância entre pontos",
+        "hint": "Clique em dois pontos no desenho ou selecione um ponto e informe o segundo rótulo.",
+        "pickOnCanvas": "Selecionar 2 pontos",
+        "picking": "Clique no desenho…",
+        "pickFirst": "Clique no 1º ponto no desenho.",
+        "pickSecond": "Agora clique no 2º ponto ({count}/2).",
+        "pickMiss": "Nenhum ponto neste clique — tente novamente.",
+        "cancelPick": "Cancelar seleção",
+        "secondPointPrompt": "Rótulo do 2º ponto (ex.: P2)"
+      },
+      "areaOps": {
+        "title": "Calcular área",
+        "hint": "Selecione um polígono fechado na lista ou clique no desenho.",
+        "polygonSelect": "Polígono",
+        "polygonPlaceholder": "— Selecione um polígono —",
+        "vertices": "vértices",
+        "pickOnCanvas": "Selecionar no desenho",
+        "picking": "Clique no polígono…",
+        "calculate": "Calcular área",
+        "cancelPick": "Cancelar seleção",
+        "needPolygon": "Selecione um polígono fechado na lista ou use \"Selecionar no desenho\".",
+        "pickHint": "Clique em um polígono fechado no desenho.",
+        "pickMiss": "Nenhum polígono fechado neste clique — tente novamente.",
+        "noPolygons": "Nenhum polígono fechado no desenho. Feche uma polilinha primeiro."
+      },
+      "createPointOps": {
+        "title": "Inserir ponto por coordenadas",
+        "hint": "Digite E, N e Z (UTM). O rótulo é opcional — se vazio, gera P1, P2…",
+        "label": "Rótulo do ponto",
+        "labelPlaceholder": "Ex.: P1 ou V-01",
+        "east": "E (m)",
+        "north": "N (m)",
+        "z": "Z (m)",
+        "insert": "Inserir ponto",
+        "invalidCoords": "Informe coordenadas E e N numéricas válidas."
+      },
+      "profileOps": {
+        "title": "Perfil do terreno",
+        "hint": "Gera perfil longitudinal entre dois pontos com cota. Importe pontos com Z ou use levantamento RTK.",
+        "hintTransversal": "Transversal: estaca + direção + largura (perpendicular), ou dois pontos (esq/dir) sem largura.",
+        "kindLongitudinal": "Longitudinal",
+        "kindTransversal": "Transversal",
+        "sectionWidth": "Largura da seção (m)",
+        "startPoint": "Ponto inicial",
+        "endPoint": "Ponto final",
+        "stationPoint": "Estaca / centro",
+        "directionPoint": "Direção / oposto",
+        "generate": "Gerar perfil",
+        "pickOnCanvas": "Selecionar 2 pontos",
+        "picking": "Clique no desenho…",
+        "pickFirst": "Clique no 1º ponto no desenho.",
+        "pickSecond": "Agora clique no 2º ponto ({count}/2).",
+        "pickStation": "Clique na estaca (centro da seção).",
+        "pickDirection": "Clique no ponto de direção ({count}/2).",
+        "pickStationDirection": "Clique na estaca e depois na direção da seção.",
+        "pickMiss": "Nenhum ponto neste clique — tente novamente.",
+        "cancelPick": "Cancelar seleção",
+        "needStart": "Informe o ponto inicial ou selecione um ponto no desenho.",
+        "needDirection": "Informe o ponto de direção para a seção transversal.",
+        "needProfile": "Gere ou selecione um perfil antes de exportar.",
+        "pendingStart": "Ponto inicial definido: {point}. Informe o ponto final e clique em Gerar perfil.",
+        "chartTitle": "Perfil longitudinal",
+        "chartTitleTransversal": "Perfil transversal",
+        "distanceAxis": "Distância (m)",
+        "elevationAxis": "Cota (m)",
+        "exportPdf": "Exportar gráfico PDF",
+        "pdfExporting": "Gerando PDF…",
+        "pdfOk": "PDF do perfil exportado."
+      },
+      "buttons": {
+        "area": "Calcular área",
+        "distance": "Distância entre pontos",
+        "renamePoint": "Renomear ponto",
+        "coords": "Inserir coordenadas",
+        "hypsometric": "Mapa hipsométrico",
+        "importTxt": "Importar TXT",
+        "importExcel": "Importar Excel",
+        "measure": "Medir",
+        "text": "Adicionar texto",
+        "pointId": "Renumerar pontos",
+        "importKml": "Importar KML",
+        "importKmz": "Importar KMZ",
+        "exportKml": "Exportar KML",
+        "exportKmz": "Exportar KMZ",
+        "tin": "Triangulação",
+        "removeTin": "Desativar TIN",
+        "contourLabel": "Cota curva",
+        "profile": "Perfil do terreno"
+      }
+    },
+    "tabs": {
+      "draw": "Desenho",
+      "printLayout": "Layout para Impressão"
+    },
+    "printLayout": {
+      "title": "Prancha técnica ABNT",
+      "subtitle": "Prancha técnica com desenho, malha UTM, planta de localização, tabela de coordenadas e carimbo — clique para editar.",
+      "importLogo": "Importar Logo",
+      "print": "Imprimir",
+      "printLoadingMap": "Carregando mapa…",
+      "printPreparing": "Preparando…",
+      "printWaitMap": "Aguarde o mapa de localização carregar antes de imprimir.",
+      "format": "Formato",
+      "orientation": "Orientação",
+      "portrait": "Retrato",
+      "landscape": "Paisagem",
+      "sheetSize": "{format} · {w} × {h} mm",
+      "abntMargins": "NBR 10068 — margem esq. {left} mm · demais {other} mm · quadro {frame} mm · legenda {legend} mm",
+      "abntLegendRule": "legenda + margem dir. = {sum} mm",
+      "abntLegendTitle": "TÍTULO",
+      "drawingArea": "Área de desenho",
+      "noDrawing": "Nenhum elemento visível. Importe dados na aba Desenho ou ative camadas.",
+      "drawingScale": "Escala do desenho na folha",
+      "drawingZoom": "Zoom do desenho",
+      "fitDrawing": "Enquadrar",
+      "scaleModeFit": "Modo automático — o desenho preenche a área útil (use o slider para ajustar).",
+      "scaleModeNominal": "Escala nominal {scale} — tamanho cartográfico na folha.",
+      "logo": "LOGO",
+      "companyPlaceholder": "Nome da empresa",
+      "fieldProject": "Projeto:",
+      "fieldTitle": "Título do desenho:",
+      "fieldScale": "Escala:",
+      "fieldDate": "Data:",
+      "fieldSheet": "Folha:",
+      "fieldDrafted": "Desenhado:",
+      "fieldChecked": "Verificado:",
+      "fieldApproved": "Aprovado:",
+      "fieldDrawingNo": "Nº Desenho:",
+      "fieldRev": "Rev:",
+      "editHint": "Clique em qualquer campo do carimbo para editar inline. Ative «Editar textos na prancha» para alterar rótulos no desenho.",
+      "utmGrid": "Malha UTM",
+      "utmZone": "Fuso {zone}S · SIRGAS 2000",
+      "trueNorth": "Norte verdadeiro",
+      "northLetter": "N",
+      "locationMap": "Planta de Localização",
+      "locationProject": "Área do projeto",
+      "locationMapStyle": "Imagem da planta de localização",
+      "locationMapStyleHint": "Satélite (recomendado), ruas ou topográfico — com retângulo vermelho da área do projeto.",
+      "locationMapStyles": {
+        "satellite": "Satélite",
+        "street": "Ruas",
+        "topo": "Topográfico"
+      },
+      "coordTableTitle": "Coordenadas UTM — SIRGAS 2000 · Fuso {zone}S",
+      "colVertex": "Vértice",
+      "colNorth": "Norte (m)",
+      "colEast": "Este (m)",
+      "colDescription": "Descrição",
+      "colArea": "Área (m²)",
+      "noVertices": "Feche um polígono na aba Desenho para listar vértices.",
+      "areaSurveyed": "Área levantada",
+      "areaPerimeter": "Perímetro",
+      "fieldOwner": "Proprietário:",
+      "fieldTechnical": "Responsável Técnico:",
+      "fieldPlace": "Local:",
+      "fieldFile": "Arquivo:",
+      "legendTitle": "Convenções",
+      "showConventions": "Exibir convenções de desenho",
+      "showConventionsHint": "Legenda de símbolos na faixa inferior e caixa sobre a área gráfica.",
+      "printLayers": "Camadas na prancha",
+      "printLayersHint": "Controle independente do painel Desenho — escolha o que entra na impressão.",
+      "printLayersAll": "Mostrar todas",
+      "printLayersNone": "Ocultar todas",
+      "printLayersSync": "Igual ao Desenho",
+      "vertexMarkerSize": "Tamanho dos vértices",
+      "vertexMarkerSizeHint": "Tamanho físico na folha (mm). Use o slider se ainda quiser aumentar — até 500%.",
+      "vertexMarkerReset": "Padrão",
+      "editTextMode": "Editar textos na prancha",
+      "editTextModeHint": "Ative e clique nos rótulos do desenho (P1, V1…) ou na nota superior. Só altera a impressão, não o projeto CAD.",
+      "conventions": {
+        "perimeter_vertex": "Vértice do perímetro",
+        "boundary": "Limite do terreno",
+        "survey_point": "Ponto de levantamento RTK",
+        "control_known": "Ponto de controle conhecido",
+        "control_observed": "Ponto de controle observado",
+        "residual": "Vetor residual de ajuste",
+        "contour_major": "Curva de nível mestra",
+        "contour_minor": "Curva de nível secundária",
+        "legal_reserve": "Reserva legal (CAR)",
+        "utm_grid": "Malha de coordenadas UTM",
+        "north": "Norte verdadeiro"
+      }
+    },
+    "draw": {
+      "selectPoint": "Clique em um ponto RTK no mapa (círculo azul) para adicionar à polilinha.",
+      "freeClick": "Clique no mapa para posicionar vértices livremente.",
+      "pointRequired": "Selecione um ponto existente — clique sobre um ponto do levantamento.",
+      "pointPicker": "Selecionar pontos",
+      "pickerHint": "Ou escolha na lista abaixo para montar a polilinha.",
+      "searchPlaceholder": "Buscar por nome ou coordenada…",
+      "noPoints": "Nenhum ponto disponível.",
+      "pointsInPolyline": "{count} vértices",
+      "optionsTitle": "Opções de desenho",
+      "snapRtk": "Snap nos pontos RTK",
+      "orthogonal": "Modo ortogonal (E / N)",
+      "orthogonalOn": "Ortogonal",
+      "lineStart": "Clique o ponto inicial da linha.",
+      "lineEnd": "Clique o ponto final ou informe distância e azimute.",
+      "polarTitle": "Distância e azimute",
+      "polarHint": "Azimute topográfico: 0° = Norte, 90° = Leste. Distância em metros.",
+      "distance": "Distância (m)",
+      "angle": "Azimute (°)",
+      "applyPolar": "Aplicar vértice",
+      "polarInvalid": "Informe distância (> 0) e azimute válidos.",
+      "distanceInvalid": "Informe uma distância maior que zero.",
+      "typedDistance": "Distância: {value} m — Enter confirma",
+      "keyboardHint": "Digite a distância no teclado e pressione Enter (Esc cancela).",
+      "polarNeedReference": "Defina o primeiro vértice no mapa para usar distância/azimute.",
+      "segmentPreview": "Δ {dist} m · Az {az}°"
+    }
+  },
+  "photogrammetry": {
+    "pageTitle": "Aerofotogrametria",
+    "pageDescription": "Importe fotos de drone, alinhe, gere nuvem densa, DEM e ortofoto — fluxo próximo ao Agisoft Metashape.",
+    "summary": {
+      "photos": "{count} fotos",
+      "gps": "{count} com GPS",
+      "noGps": "sem GPS no EXIF"
+    },
+    "actions": {
+      "newProject": "Novo projeto"
+    },
+    "import": {
+      "addPhotos": "Importar fotos",
+      "loading": "Lendo EXIF…",
+      "empty": "Arraste ou importe fotos JPG/TIF georreferenciadas do voo.",
+      "rejected": "{count} arquivo(s) ignorado(s) — formato ou tamanho inválido.",
+      "needReimport": "As fotos não estão mais na memória. Importe novamente antes de processar (evite F5 após importar).",
+      "noGps": "Sem GPS",
+      "alt": "Alt {value} m"
+    },
+    "pipeline": {
+      "title": "Fluxo de processamento",
+      "import": "Fotos",
+      "hint": "Execute cada etapa ou use Processar tudo para o pipeline completo (Alinhar → Nuvem densa → DEM → Ortofoto).",
+      "hintSkipDense": "Nuvem densa desativada — após alinhar, o fluxo segue direto para DEM (4) e Ortofoto (5)."
+    },
+    "views": {
+      "photos": "Fotos",
+      "map": "Mapa de voo",
+      "outputs": "Produtos",
+      "log": "Log"
+    },
+    "settings": {
+      "importTitle": "Importação",
+      "importHint": "Use fotos com sobreposição ≥70% e EXIF/GPS (DJI, Autel, etc.). Mínimo 2 fotos; recomendado 20+.",
+      "formats": "Formatos: JPG, PNG, TIF · máx. 50 MB por arquivo.",
+      "alignQuality": "Qualidade do alinhamento",
+      "denseQuality": "Qualidade da nuvem densa",
+      "generateDenseCloud": "Gerar nuvem de pontos densa (etapa 3)",
+      "generateDenseCloudHint": "Desmarque para pular a nuvem densa e ir direto ao DEM e ortofoto após o alinhamento.",
+      "denseSkipHint": "A nuvem densa exportada será ignorada. O DEM e a ortofoto ainda serão gerados pelo OpenDroneMap internamente.",
+      "denseSkipped": "Etapa ignorada — indo para DEM",
+      "denseSkippedLog": "Nuvem densa ignorada — próximas etapas: DEM e ortofoto.",
+      "denseEnabledLog": "Nuvem densa reativada no fluxo.",
+      "demResolution": "Resolução DEM (cm/pixel)",
+      "orthoResolution": "Resolução ortofoto (cm/pixel)",
+      "qualityUltra": "Ultra",
+      "qualityHigh": "Alta",
+      "qualityMedium": "Média",
+      "qualityLow": "Baixa",
+      "odmConnected": "OpenDroneMap ativo ({version}) — processamento real habilitado.",
+      "odmOffline": "PHOTOGRAMMETRY_ODM_URL configurada, mas NodeODM offline. Inicie: docker compose up nodeodm -d",
+      "odmNotConfigured": "Modo demonstração. Adicione PHOTOGRAMMETRY_ODM_URL=http://localhost:3002 no .env.local e inicie o NodeODM."
+    },
+    "processing": {
+      "runAll": "Processar tudo",
+      "runStep": "Processar etapa",
+      "running": "Processando…",
+      "starting": "Iniciando…",
+      "preparing": "Preparando envio…",
+      "uploadingPhotos": "Enviando fotos… {pct}%",
+      "serverProcessing": "Salvando e enviando ao NodeODM (aguarde)…",
+      "networkError": "Falha de rede ao enviar as fotos.",
+      "timeout": "Tempo esgotado — tente menos fotos ou limpe a fila ODM.",
+      "failed": "Falha no processamento",
+      "clearQueue": "Limpar fila NodeODM",
+      "clearQueueFailed": "Não foi possível limpar a fila do NodeODM.",
+      "skipDense": "Pular nuvem densa → ir para DEM",
+      "goToDem": "Continuar para DEM (etapa 4)",
+      "needAlign": "Conclua o alinhamento antes desta etapa.",
+      "needDense": "Conclua ou pule a nuvem densa antes do DEM.",
+      "needDem": "Conclua o DEM antes da ortofoto.",
+      "denseDisabled": "Nuvem densa desativada — use DEM ou reative a opção."
+    },
+    "outputs": {
+      "empty": "Nenhum produto gerado ainda. Execute as etapas do pipeline.",
+      "download": "Baixar"
+    },
+    "log": {
+      "empty": "Nenhum evento registrado."
+    },
+    "gcp": {
+      "title": "Pontos de controle (GCP)",
+      "enable": "Usar pontos de controle no alinhamento",
+      "enableHint": "Informe as coordenadas levantadas no centro do alvo em campo.",
+      "whiteX": "Alvos com X branco em campo",
+      "whiteXHint": "Detecta automaticamente marcas claras em cruz (X) nas fotos importadas.",
+      "projection": "Projeção (EPSG/PROJ)",
+      "addPoint": "+ Ponto",
+      "autoDetect": "Detectar X automaticamente",
+      "detecting": "Detectando…",
+      "easting": "E/Lon",
+      "northing": "N/Lat",
+      "elevation": "Cota (m)",
+      "obsSummary": "{count} observações em fotos (mín. {min} para ODM).",
+      "obsCount": "{count} foto(s)",
+      "autoTag": "auto",
+      "markOnPhoto": "Marcar na foto",
+      "markingActive": "Clique na foto para marcar…",
+      "readyForOdm": "GCP pronto — será enviado ao OpenDroneMap.",
+      "needObservations": "Adicione coordenadas e detecte/marque os alvos nas fotos (mín. 3 observações).",
+      "detectLog": "Detecção: {marks} marcas, {linked} vínculos, {obs} observações GCP.",
+      "marksOnPhoto": "{count} GCP(s)",
+      "needObservationsShort": "Configure e detecte os GCP antes de processar."
+    }
+  },
+  "errors": {
+    "notAuthenticated": "Não autenticado.",
+    "planIdRequired": "planId é obrigatório.",
+    "subscriptionFailed": "Falha ao criar assinatura Mercado Pago.",
+    "invalidWebhook": "Webhook inválido.",
+    "wrongCredentials": "E-mail ou senha incorretos.",
+    "passwordRequired": "Informe a senha.",
+    "passwordsMismatch": "As senhas não coincidem.",
+    "loginAfterRegister": "Conta criada, mas não foi possível entrar. Faça login."
+  }
+}

@@ -13,6 +13,7 @@ import { maskRtkPassword } from "@/lib/rtk/crypto";
 import { resolveLicenseStatus } from "@/lib/rtk/license-status";
 import { checkRateLimit } from "@/lib/rtk/rate-limit";
 import { assertTrialNotDuplicated, emailHasTrialLicense } from "@/lib/rtk/trial-registry";
+import { trialRegistryRepository } from "@/lib/db/repositories/trial-registry.repository";
 import { rtkProviderService } from "@/lib/rtk/providers/rtk-provider-service";
 import type { RtkPublicCredentials } from "@/lib/rtk/types";
 import { buildWebhookEvent, rtkWebhookRegistry } from "@/lib/rtk/webhooks";
@@ -92,18 +93,23 @@ export async function createRtkLicenseAction(
   const selectedPlan = (plan?.trim() || rtkProviderService.getDefaultPlan()).toLowerCase();
 
   if (selectedPlan === "trial") {
-    const registryBlocked = await emailHasTrialLicense(auth.session.email);
-    if (registryBlocked) {
-      return {
-        success: false,
-        error: "Este e-mail já possui uma licença trial RTK registrada.",
-        code: "TRIAL_DUPLICATE",
-      };
-    }
+    const needsProvision =
+      !auth.stored.credentialsActive || auth.stored.ntrip.username === "NONE";
 
-    const trialCheck = assertTrialNotDuplicated(auth.stored, selectedPlan);
-    if (!trialCheck.ok) {
-      return { success: false, error: trialCheck.error, code: "TRIAL_DUPLICATE" };
+    if (!needsProvision) {
+      const registryBlocked = await emailHasTrialLicense(auth.session.email);
+      if (registryBlocked) {
+        return {
+          success: false,
+          error: "Este e-mail já possui uma licença trial RTK registrada.",
+          code: "TRIAL_DUPLICATE",
+        };
+      }
+
+      const trialCheck = assertTrialNotDuplicated(auth.stored, selectedPlan);
+      if (!trialCheck.ok) {
+        return { success: false, error: trialCheck.error, code: "TRIAL_DUPLICATE" };
+      }
     }
 
     const activation = await ntripSubscriptionActivationService.activateSubscription({
@@ -117,6 +123,12 @@ export async function createRtkLicenseAction(
       return { success: false, error: activation.error, code: "VALIDATION_ERROR" };
     }
 
+    await trialRegistryRepository.registerTrial({
+      email: auth.session.email,
+      userId: auth.session.id,
+      licenseId: activation.licenseId,
+    });
+
     const saved = await findStoredUserById(auth.session.id);
     if (!saved?.rtkLicense) {
       return { success: false, error: "Licença trial criada, mas não foi possível carregar os dados.", code: "VALIDATION_ERROR" };
@@ -126,6 +138,8 @@ export async function createRtkLicenseAction(
     const updatedSession = storedUserToSession(saved);
     await refreshSession(updatedSession);
     revalidatePath("/area-cliente/credenciais");
+  revalidatePath("/area-cliente/assinatura");
+    revalidatePath("/area-cliente/assinatura");
 
     return {
       success: true,
@@ -201,6 +215,7 @@ export async function createRtkLicenseAction(
   const updatedSession = storedUserToSession(saved.user);
   await refreshSession(updatedSession);
   revalidatePath("/area-cliente/credenciais");
+  revalidatePath("/area-cliente/assinatura");
 
   return {
     success: true,
@@ -312,6 +327,7 @@ export async function renewRtkLicenseAction(
   const updatedSession = storedUserToSession(saved.user);
   await refreshSession(updatedSession);
   revalidatePath("/area-cliente/credenciais");
+  revalidatePath("/area-cliente/assinatura");
 
   return {
     success: true,

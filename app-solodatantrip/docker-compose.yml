@@ -21,5 +21,14 @@ services:
     depends_on:
       - db
 
+  nodeodm:
+    image: opendronemap/nodeodm:latest
+    ports:
+      - "3002:3000"
+    volumes:
+      - nodeodm_data:/var/www/data
+    restart: unless-stopped
+
 volumes:
   pgdata:
+  nodeodm_data:

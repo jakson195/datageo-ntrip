@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* DataGeo NTrip — paleta do logo (Data · Geo · NTrip) */
+/* DataGeoNTrip — paleta do logo (Data · Geo · NTrip) */
 :root {
   --background: #000000;
   --foreground: #f0f4f8;
@@ -327,4 +327,53 @@ body {
 
 .client-shell {
   background: var(--surface-light);
+}
+
+.rtk-validation-workspace {
+  color: #111827;
+}
+
+.rtk-validation-workspace h2,
+.rtk-validation-workspace h3,
+.rtk-validation-workspace label,
+.rtk-validation-workspace legend,
+.rtk-validation-workspace fieldset {
+  color: #111827;
+}
+
+.rtk-validation-workspace section {
+  color: #111827;
+}
+
+.rtk-validation-workspace button:not(.text-white) {
+  color: inherit;
+}
+
+.rtk-validation-workspace .rtk-map-panel {
+  min-height: 200px;
+}
+
+.rtk-validation-workspace input,
+.rtk-validation-workspace select,
+.rtk-validation-workspace textarea {
+  color: #111827;
+  background-color: #fff;
+}
+
+.rtk-validation-workspace .rtk-data-table {
+  color: #111827;
+}
+
+.rtk-validation-workspace .rtk-data-table thead th {
+  color: #374151;
+  background: #f9fafb;
+}
+
+.rtk-validation-workspace .rtk-data-table tbody td {
+  color: #111827;
+  background: #fff;
+}
+
+.rtk-validation-workspace .rtk-data-table tbody tr:hover td {
+  background: #f9fafb;
 }

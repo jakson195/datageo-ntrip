@@ -80,6 +80,10 @@ export class StripeService {
     return session.url;
   }
 
+  async cancelSubscriptionByExternalId(externalId: string): Promise<void> {
+    await getStripe().subscriptions.cancel(externalId);
+  }
+
   async handleWebhook(rawBody: string, signature: string): Promise<void> {
     const secret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
     if (!secret) throw new Error("STRIPE_WEBHOOK_SECRET não configurada.");
@@ -179,6 +183,7 @@ export class StripeService {
       sub.plan?.slug ?? "mensal",
       sub.id,
       "STRIPE",
+      payment.id,
     );
   }
 
@@ -198,6 +203,9 @@ export class StripeService {
     if (retries >= 3) {
       await this.automation.suspendForNonPayment(sub.userId, sub.id);
     }
+
+    const { billingNotificationService } = await import("@/lib/billing/notification.service");
+    await billingNotificationService.notifyPaymentFailed(sub.userId, sub.id);
   }
 
   private async onSubscriptionCancelled(subscription: Stripe.Subscription): Promise<void> {
@@ -207,7 +215,7 @@ export class StripeService {
     await subscriptionRepository.updateStatus(sub.id, "CANCELLED", {
       cancelledAt: new Date(),
     });
-    await this.automation.suspendForNonPayment(sub.userId, sub.id);
+    await this.automation.cancelSubscription(sub.userId, "Assinatura cancelada pelo cliente");
   }
 }
 

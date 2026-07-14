@@ -2,6 +2,8 @@ import "server-only";
 
 import { randomUUID } from "crypto";
 import { getRtkConfig, isRtkApiConfigured } from "../config";
+import { mapPlanSlugToRtkApi } from "../plan-map";
+import { generateRtkUsername } from "@/lib/ntrip/credential-generator";
 import { RtkDataResellerProvider } from "./rtk-data-reseller-provider";
 import { resolveRtkProvider } from "./multi-provider";
 import type { RtkProvider, RtkProvisionParams, RtkRenewParams } from "./types";
@@ -43,6 +45,7 @@ export class RTKProviderService {
     const trimmedName = customerName.trim();
     const trimmedEmail = customerEmail.trim().toLowerCase();
     const selectedPlan = (plan?.trim() || this.getDefaultPlan()).toLowerCase();
+    const rtkPlan = mapPlanSlugToRtkApi(selectedPlan);
 
     if (!trimmedName || !trimmedEmail) {
       return {
@@ -52,11 +55,23 @@ export class RTKProviderService {
       };
     }
 
+    if (!rtkPlan) {
+      return {
+        ok: false,
+        error: `Plano "${selectedPlan}" não é suportado pela API RTKdata. Use trial, mensal ou anual.`,
+        code: "VALIDATION_ERROR",
+      };
+    }
+
+    const config = getRtkConfig();
     const params: RtkProvisionParams = {
       customerName: trimmedName,
       customerEmail: trimmedEmail,
-      plan: selectedPlan,
+      plan: rtkPlan,
       idempotencyKey: idempotencyKey?.trim() || randomUUID(),
+      username: generateRtkUsername(trimmedEmail),
+      country: config.defaultCountry,
+      maxConnections: config.defaultMaxConnections,
     };
 
     return this.provider.provision(params);
@@ -76,15 +91,27 @@ export class RTKProviderService {
       };
     }
 
-    const params: RtkRenewParams = {
+    const selectedPlan = (plan?.trim() || this.getDefaultPlan()).toLowerCase();
+    const rtkPlan = mapPlanSlugToRtkApi(selectedPlan);
+    if (!rtkPlan) {
+      return {
+        ok: false,
+        error: `Plano "${selectedPlan}" não é suportado pela API RTKdata.`,
+        code: "VALIDATION_ERROR",
+      };
+    }
+
+    const config = getRtkConfig();
+    return this.provider.renew({
       customerName: customerName.trim(),
       customerEmail: customerEmail.trim().toLowerCase(),
-      plan: (plan?.trim() || this.getDefaultPlan()).toLowerCase(),
+      plan: rtkPlan,
       previousLicenseId,
       idempotencyKey: randomUUID(),
-    };
-
-    return this.provider.renew(params);
+      username: generateRtkUsername(customerEmail.trim().toLowerCase()),
+      country: config.defaultCountry,
+      maxConnections: config.defaultMaxConnections,
+    });
   }
 }
 

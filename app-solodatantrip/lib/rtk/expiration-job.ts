@@ -6,14 +6,14 @@ import { rtkLicenseRepository } from "@/lib/db/repositories/rtk-license.reposito
 import { appendRtkAuditLog } from "./audit-log";
 import { buildWebhookEvent, rtkWebhookRegistry } from "./webhooks";
 import { dtoSubscriptionToPrisma } from "@/lib/db/mappers/prisma.mapper";
+import { ntripSubscriptionActivationService } from "@/lib/ntrip/subscription-activation.service";
+import { suspendRemoteRtkLicense, cancelRemoteRtkLicense } from "./license-lifecycle";
 
 export interface RtkExpirationJobResult {
   checked: number;
   expired: number;
   licenseIds: string[];
 }
-
-import { ntripSubscriptionActivationService } from "@/lib/ntrip/subscription-activation.service";
 
 export async function runRtkExpirationJob(): Promise<RtkExpirationJobResult> {
   const entitlementExpired = await ntripSubscriptionActivationService.expireDueSubscriptions();
@@ -79,6 +79,18 @@ export async function suspendRtkLicense(
   const licenseId = user.rtkLicenseId ?? user.rtkLicense?.licenseId;
   if (!licenseId) return { ok: false, error: "Usuário sem licença RTK." };
 
+  const remote = await suspendRemoteRtkLicense(licenseId, reason);
+  if (!remote.ok) {
+    console.error(
+      JSON.stringify({
+        service: "rtk-expiration",
+        event: "remote_suspend_failed",
+        licenseId,
+        error: remote.error,
+      }),
+    );
+  }
+
   await rtkLicenseRepository.updateByLicenseId(licenseId, { status: "suspended" });
 
   await prisma.user.update({
@@ -102,6 +114,54 @@ export async function suspendRtkLicense(
       reason,
     }),
   );
+
+  return { ok: true };
+}
+
+export async function cancelRtkLicense(
+  userId: string,
+  reason?: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await userRepository.findById(userId);
+  if (!user) return { ok: false, error: "Usuário não encontrado." };
+
+  const licenseId = user.rtkLicenseId ?? user.rtkLicense?.licenseId;
+  if (!licenseId) return { ok: false, error: "Usuário sem licença RTK." };
+
+  const remote = await cancelRemoteRtkLicense(licenseId, reason);
+  if (!remote.ok) {
+    console.error(
+      JSON.stringify({
+        service: "rtk-expiration",
+        event: "remote_cancel_failed",
+        licenseId,
+        error: remote.error,
+      }),
+    );
+  }
+
+  await rtkLicenseRepository.updateByLicenseId(licenseId, { status: "expired" });
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      credentialsActive: false,
+      streams: 0,
+      subscriptionStatus: dtoSubscriptionToPrisma("inativo"),
+      subscriptionLabel: "Licença cancelada",
+      ntripUsername: "NONE",
+      ntripPasswordEnc: "NONE",
+    },
+  });
+
+  await appendRtkAuditLog({
+    action: "license.expire",
+    userId,
+    userEmail: user.email,
+    licenseId,
+    ip: "billing",
+    metadata: { reason, source: "cancel" },
+  });
 
   return { ok: true };
 }

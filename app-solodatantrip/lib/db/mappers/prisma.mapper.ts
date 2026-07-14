@@ -111,12 +111,24 @@ export function mapUserToDto(
 ): UserDto {
   const license = primaryLicense ?? null;
   const legacyStatus = prismaSubscriptionToDto(user.subscriptionStatus);
+  const entitlementStatus = entitlement
+    ? mapPrismaSubscriptionStatusToDto(entitlement.status)
+    : null;
+
   const subscription = entitlement
-    ? {
-        plan: entitlement.plan.slug,
-        status: mapPrismaSubscriptionStatusToDto(entitlement.status),
-        label: subscriptionStatusLabel(entitlement.status, entitlement.plan),
-      }
+    ? user.credentialsActive &&
+      entitlementStatus === "pending" &&
+      legacyStatus === "ativo"
+      ? {
+          plan: user.subscriptionPlan,
+          status: "active" as const,
+          label: user.subscriptionLabel,
+        }
+      : {
+          plan: entitlement.plan.slug,
+          status: entitlementStatus!,
+          label: subscriptionStatusLabel(entitlement.status, entitlement.plan),
+        }
     : {
         plan: user.subscriptionPlan,
         status: (legacyStatus === "ativo" ? "active" : "pending") as UserDto["subscription"]["status"],

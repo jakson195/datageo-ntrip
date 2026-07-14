@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { ApplicationsSection } from "./applications-section";
 import { CoverageMapViewport } from "./coverage-map-viewport";
+import { DifferentialsSection } from "./differentials-section";
 import { HardNavLink } from "./hard-nav-link";
 import { HeroSection } from "./hero-section";
-import { IndustriesSection } from "./industries-section";
+import { LandingSeoJsonLd } from "./landing-seo-jsonld";
 import { PricingPlansSection } from "./pricing-plans-section";
 import { ServiceGuideSection } from "./service-guide-section";
 import { SiteHeader } from "./site-header";
@@ -25,13 +27,16 @@ const faqs = [
 export function LandingPage() {
   return (
     <>
+      <LandingSeoJsonLd />
       <SiteHeader />
       <main className="grid-bg">
         <HeroSection />
 
         <ServiceGuideSection />
 
-        <IndustriesSection />
+        <ApplicationsSection />
+
+        <DifferentialsSection />
 
         {/* Módulos / NTRIP */}
         <section id="ntrip" className="scroll-mt-32 py-20 sm:py-28">
@@ -131,14 +136,20 @@ export function LandingPage() {
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-4 text-sm text-muted sm:flex-row sm:px-6">
           <p>
             © {new Date().getFullYear()}{" "}
-            <span className="brand-wordmark">
+            <span className="brand-wordmark brand-wordmark-on-dark">
               <span className="brand-data">Data</span>
-              <span className="brand-geo">Geo</span>{" "}
+              <span className="brand-geo">Geo</span>
               <span className="brand-ntrip">NTrip</span>
             </span>
             . Todos os direitos reservados.
           </p>
-          <nav className="flex gap-6">
+          <nav className="flex flex-wrap justify-center gap-6">
+            <Link href="#aplicacoes" className="hover:text-foreground">
+              Aplicações
+            </Link>
+            <Link href="#diferenciais" className="hover:text-foreground">
+              Diferenciais
+            </Link>
             <Link href="#ntrip" className="hover:text-foreground">
               NTRIP
             </Link>

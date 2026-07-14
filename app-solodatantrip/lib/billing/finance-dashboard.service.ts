@@ -17,6 +17,7 @@ export class FinanceDashboardService {
       monthlyRevenue,
       overdueSubs,
       trialTotal,
+      trialActive,
       newCustomersThisMonth,
       renewalsThisMonth,
     ] = await Promise.all([
@@ -28,6 +29,13 @@ export class FinanceDashboardService {
         include: { plan: true },
       }),
       prisma.trialRegistry.count({ where: { deletedAt: null } }),
+      prisma.user.count({
+        where: {
+          deletedAt: null,
+          subscriptionPlan: "trial",
+          credentialsActive: true,
+        },
+      }),
       prisma.user.count({
         where: {
           deletedAt: null,
@@ -52,6 +60,7 @@ export class FinanceDashboardService {
     });
 
     const mrr = await this.calculateMrr();
+    const annualRevenue = await paymentRepository.getAnnualRevenue(year);
     const overdueAmount = overdueSubs.reduce((sum, s) => sum + Number(s.plan.price), 0);
     const trialConversionRate =
       trialTotal > 0 ? Math.round((convertedFromTrial / trialTotal) * 100) : 0;
@@ -76,7 +85,9 @@ export class FinanceDashboardService {
     return {
       mrr,
       arr: mrr * 12,
+      annualRevenue,
       activeCustomers,
+      trialCustomers: trialActive,
       churnRate,
       monthlyRevenue,
       overdueAmount,

@@ -2,8 +2,7 @@ import "server-only";
 
 export type RtkEnvironment = "sandbox" | "production";
 
-const DEFAULT_SANDBOX_URL =
-  "https://rtkdata-reseller-1.onrender.com/api/v1/provision";
+const DEFAULT_API_BASE_URL = "https://rtkdata-reseller-1.onrender.com/api/v1";
 
 function resolveEnvironment(): RtkEnvironment {
   const raw = process.env.RTK_API_MODE?.trim().toLowerCase();
@@ -11,57 +10,70 @@ function resolveEnvironment(): RtkEnvironment {
   return "sandbox";
 }
 
-function resolveUrl(environment: RtkEnvironment): string {
-  if (environment === "production") {
-    const productionUrl =
-      process.env.RTK_API_URL_PRODUCTION?.trim() ||
-      process.env.RTK_API_URL?.trim();
-    if (productionUrl) return productionUrl.replace(/\/$/, "");
+function resolveApiBaseUrl(): string {
+  const explicitBase = process.env.RTK_API_BASE_URL?.trim();
+  if (explicitBase) return explicitBase.replace(/\/$/, "");
+
+  const legacyUrl =
+    process.env.RTK_API_URL?.trim() ||
+    process.env.RTK_API_URL_PRODUCTION?.trim() ||
+    process.env.RTK_RESELLER_API_URL?.trim();
+
+  if (legacyUrl) {
+    return legacyUrl.replace(/\/provision\/?$/, "").replace(/\/$/, "");
   }
 
-  const sandboxUrl =
-    process.env.RTK_API_URL?.trim() ||
-    process.env.RTK_RESELLER_API_URL?.trim() ||
-    DEFAULT_SANDBOX_URL;
-
-  return sandboxUrl.replace(/\/$/, "");
+  return DEFAULT_API_BASE_URL;
 }
 
 function resolveApiKey(environment: RtkEnvironment): string | null {
   if (environment === "production") {
-    const productionKey =
+    return (
       process.env.RTK_API_KEY_PRODUCTION?.trim() ||
-      process.env.RTK_API_KEY?.trim();
-    if (productionKey) return productionKey;
+      process.env.RTK_API_KEY_LIVE?.trim() ||
+      null
+    );
   }
 
-  const sandboxKey =
+  return (
+    process.env.RTK_API_KEY_TEST?.trim() ||
     process.env.RTK_API_KEY?.trim() ||
-    process.env.RTK_RESELLER_API_TOKEN?.trim();
-
-  return sandboxKey || null;
+    process.env.RTK_RESELLER_API_TOKEN?.trim() ||
+    null
+  );
 }
 
 export interface RtkConfig {
   environment: RtkEnvironment;
+  apiBaseUrl: string;
   apiUrl: string;
   apiKey: string | null;
   defaultPlan: string;
+  defaultCountry: string;
+  defaultMaxConnections: number;
   isProduction: boolean;
 }
 
 export function getRtkConfig(): RtkConfig {
   const environment = resolveEnvironment();
+  const apiBaseUrl = resolveApiBaseUrl();
   const apiKey = resolveApiKey(environment);
+  const maxConnectionsRaw = Number(process.env.RTK_DEFAULT_MAX_CONNECTIONS ?? 1);
 
   return {
     environment,
-    apiUrl: resolveUrl(environment),
+    apiBaseUrl,
+    apiUrl: `${apiBaseUrl}/provision`,
     apiKey,
     defaultPlan:
       process.env.RTK_DEFAULT_PLAN?.trim() ||
       process.env.RTK_PROVISION_PLAN?.trim() ||
       "trial",
+    defaultCountry: process.env.RTK_DEFAULT_COUNTRY?.trim() || "BR",
+    defaultMaxConnections:
+      Number.isFinite(maxConnectionsRaw) && maxConnectionsRaw > 0
+        ? Math.floor(maxConnectionsRaw)
+        : 1,
     isProduction: environment === "production",
   };
 }

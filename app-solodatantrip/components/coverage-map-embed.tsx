@@ -3,15 +3,22 @@ import { buildCoverageEmbedUrl } from "@/lib/coverage-embed";
 type CoverageMapEmbedProps = {
   compact?: boolean;
   className?: string;
+  center?: [number, number];
+  zoom?: number;
 };
 
-export function CoverageMapEmbed({ compact = false, className = "" }: CoverageMapEmbedProps) {
+export function CoverageMapEmbed({
+  compact = false,
+  className = "",
+  center,
+  zoom,
+}: CoverageMapEmbedProps) {
   const src = buildCoverageEmbedUrl({
     theme: "dark",
     lang: "pt",
     color: "00C8F0",
-    zoom: compact ? 3 : 3.5,
-    center: [-14, -54],
+    zoom: zoom ?? (compact ? 3 : 3.5),
+    center: center ?? [-14, -54],
   });
 
   const heightClass = compact
@@ -20,7 +27,7 @@ export function CoverageMapEmbed({ compact = false, className = "" }: CoverageMa
 
   return (
     <div
-      className={`coverage-embed overflow-hidden rounded-xl border border-card-border ${heightClass} ${className}`}
+      className={`coverage-embed overflow-hidden rounded-xl border border-card-border ${className || heightClass}`}
     >
       <iframe
         src={src}

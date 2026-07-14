@@ -164,6 +164,10 @@ model User {
   invoices             Invoice[]
   sessions             UserSession[]
   devices              GnssDevice[]
+  rtkSurveyProjects    RtkSurveyProject[]
+  cadUserProjects      CadUserProject[]
+  passwordResetTokens  PasswordResetToken[]
+  ntripQualityDaily    NtripQualityDaily[]
 
   @@index([email])
   @@index([deletedAt])
@@ -492,4 +496,146 @@ model NtripAccount {
   @@index([isPrimary])
   @@index([deletedAt])
   @@map("ntrip_accounts")
+}
+
+// ─── RTK Validation & Adjustment ─────────────────────────────────────────────
+
+enum RtkSurveyStatus {
+  DRAFT
+  ADJUSTED
+  EXPORTED
+  ARCHIVED
+}
+
+enum RtkAdjustmentMethod {
+  TRANSLATION
+  HELMERT_2D
+  HELMERT_3D
+}
+
+model RtkSurveyProject {
+  id               String                @id @default(cuid())
+  userId           String                @map("user_id")
+  name             String
+  description      String?
+  crs              String                @default("EPSG:4674")
+  ntripCaster      String?               @map("ntrip_caster")
+  ntripMountpoint  String?               @map("ntrip_mountpoint")
+  status           RtkSurveyStatus       @default(DRAFT)
+  adjustmentMethod RtkAdjustmentMethod?  @map("adjustment_method")
+  rmsBefore        Float?                @map("rms_before")
+  rmsAfter         Float?                @map("rms_after")
+  helmertParams    Json?                 @map("helmert_params")
+  metadata         Json?
+  createdAt        DateTime              @default(now()) @map("created_at")
+  updatedAt        DateTime              @updatedAt @map("updated_at")
+
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  surveyPoints  RtkSurveyPoint[]
+  controlPoints RtkControlPoint[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("rtk_survey_projects")
+}
+
+model RtkSurveyPoint {
+  id         String   @id @default(cuid())
+  projectId  String   @map("project_id")
+  name       String
+  e          Float
+  n          Float
+  z          Float
+  eCorr      Float?   @map("e_corr")
+  nCorr      Float?   @map("n_corr")
+  zCorr      Float?   @map("z_corr")
+  properties Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  project RtkSurveyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("rtk_survey_points")
+}
+
+model RtkControlPoint {
+  id         String   @id @default(cuid())
+  projectId  String   @map("project_id")
+  name       String
+  eKnown     Float    @map("e_known")
+  nKnown     Float    @map("n_known")
+  zKnown     Float    @map("z_known")
+  eObserved  Float    @map("e_observed")
+  nObserved  Float    @map("n_observed")
+  zObserved  Float    @map("z_observed")
+  residualE  Float?   @map("residual_e")
+  residualN  Float?   @map("residual_n")
+  residualZ  Float?   @map("residual_z")
+  rms        Float?
+  isOutlier  Boolean  @default(false) @map("is_outlier")
+  excluded   Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  project RtkSurveyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("rtk_control_points")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
+model CadUserProject {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  name      String
+  data      Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([updatedAt])
+  @@map("cad_user_projects")
+}
+
+model NtripQualityDaily {
+  id                String   @id @default(cuid())
+  userId            String?  @map("user_id")
+  casterHost        String   @map("caster_host")
+  date              DateTime @db.Date
+  fixCount          Int      @default(0) @map("fix_count")
+  floatCount        Int      @default(0) @map("float_count")
+  avgSatellites     Float?   @map("avg_satellites")
+  avgHdop           Float?   @map("avg_hdop")
+  avgVdop           Float?   @map("avg_vdop")
+  avgCorrectionAge  Float?   @map("avg_correction_age")
+  uptimePercent     Float?   @map("uptime_percent")
+  avgLatencyMs      Float?   @map("avg_latency_ms")
+  avgHorizPrecision Float?   @map("avg_horiz_precision")
+  avgVertPrecision  Float?   @map("avg_vert_precision")
+  metadata          Json?
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, casterHost, date])
+  @@index([casterHost])
+  @@index([date])
+  @@map("ntrip_quality_daily")
 }

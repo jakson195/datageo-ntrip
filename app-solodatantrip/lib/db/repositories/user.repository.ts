@@ -1,11 +1,35 @@
 import "server-only";
 
-import type { Prisma, User } from "@prisma/client";
+import type { NtripSubscription, Plan, Prisma, User } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import type { CreateUserInput, UpdateUserInput, UserDto } from "@/lib/db/dtos";
 import { mapUserToDto } from "@/lib/db/mappers/prisma.mapper";
 import { encryptRtkSecret } from "@/lib/rtk/crypto";
 import { dtoSubscriptionToPrisma } from "@/lib/db/mappers/prisma.mapper";
+
+type EntitlementRow = NtripSubscription & { plan: Plan };
+
+/** Checkout PENDING recente não deve mascarar trial/licença ACTIVE. */
+function pickDisplayEntitlement(rows: EntitlementRow[]): EntitlementRow | null {
+  if (rows.length === 0) return null;
+
+  const now = Date.now();
+  const activeValid = rows.filter(
+    (row) =>
+      row.status === "ACTIVE" &&
+      (!row.expiresAt || row.expiresAt.getTime() > now),
+  );
+
+  if (activeValid.length > 0) {
+    return activeValid.sort(
+      (a, b) =>
+        (b.expiresAt?.getTime() ?? Number.MAX_SAFE_INTEGER) -
+        (a.expiresAt?.getTime() ?? Number.MAX_SAFE_INTEGER),
+    )[0];
+  }
+
+  return rows[0];
+}
 
 function toPrismaUserSubscriptionStatus(
   status?: UserDto["subscription"]["status"],
@@ -24,10 +48,23 @@ const userInclude = {
   ntripSubscriptions: {
     where: notDeleted,
     orderBy: { createdAt: "desc" as const },
-    take: 1,
+    take: 10,
     include: { plan: true },
   },
 } as const;
+
+function mapUserRecord(
+  user: User & {
+    rtkLicenses: Parameters<typeof mapUserToDto>[1][];
+    ntripSubscriptions: EntitlementRow[];
+  },
+): UserDto {
+  return mapUserToDto(
+    user,
+    user.rtkLicenses[0] ?? null,
+    pickDisplayEntitlement(user.ntripSubscriptions),
+  );
+}
 
 export class UserRepository {
   async findByEmail(email: string): Promise<UserDto | null> {
@@ -36,7 +73,7 @@ export class UserRepository {
       include: userInclude,
     });
     if (!user) return null;
-    return mapUserToDto(user, user.rtkLicenses[0] ?? null, user.ntripSubscriptions[0] ?? null);
+    return mapUserRecord(user);
   }
 
   async findById(id: string): Promise<UserDto | null> {
@@ -45,7 +82,7 @@ export class UserRepository {
       include: userInclude,
     });
     if (!user) return null;
-    return mapUserToDto(user, user.rtkLicenses[0] ?? null, user.ntripSubscriptions[0] ?? null);
+    return mapUserRecord(user);
   }
 
   async findByIdWithPassword(id: string): Promise<User | null> {
@@ -87,6 +124,7 @@ export class UserRepository {
   async update(id: string, input: UpdateUserInput): Promise<UserDto> {
     const data: Prisma.UserUpdateInput = {};
 
+    if (input.passwordHash !== undefined) data.passwordHash = input.passwordHash;
     if (input.streams !== undefined) data.streams = input.streams;
     if (input.expiryDate !== undefined) data.expiryDate = input.expiryDate;
     if (input.credentialsActive !== undefined) {

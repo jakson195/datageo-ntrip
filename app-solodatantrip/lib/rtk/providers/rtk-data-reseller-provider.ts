@@ -187,10 +187,13 @@ async function executeProvisionRequest(
       body: JSON.stringify({
         plan: params.plan,
         idempotency_key: params.idempotencyKey,
+        ...(params.username ? { username: params.username } : {}),
         customer: {
           email: params.customerEmail,
           name: params.customerName,
+          country: params.country ?? config.defaultCountry,
         },
+        max_connections: params.maxConnections ?? config.defaultMaxConnections,
       }),
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
@@ -298,6 +301,9 @@ export class RtkDataResellerProvider implements RtkProvider {
       customerEmail: params.customerEmail,
       plan: params.plan,
       idempotencyKey: params.idempotencyKey || randomUUID(),
+      username: params.username,
+      country: params.country,
+      maxConnections: params.maxConnections,
     });
   }
 }
