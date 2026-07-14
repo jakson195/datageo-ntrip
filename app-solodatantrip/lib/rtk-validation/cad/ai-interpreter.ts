@@ -68,7 +68,7 @@ function rawToCommand(raw: Record<string, unknown>): CadAiCommand {
       : undefined;
 
   const cmd: CadAiCommand = {
-    ...(raw as CadAiCommand),
+    ...(raw as unknown as CadAiCommand),
     acao,
     pontos,
     texto: typeof raw.texto === "string" ? raw.texto : typeof raw.conteudo === "string" ? raw.conteudo : undefined,

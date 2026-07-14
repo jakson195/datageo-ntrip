@@ -1,5 +1,5 @@
 import type { Bbox4326 } from "@/lib/cad-map/fetch-map-image";
-import type { CadGeorefContext } from "./georef";
+import { createCadGeorefContext, type CadGeorefContext } from "./georef";
 import { latLonToVertexGeoref } from "./georef";
 import type { CadEntity, CadLayer, CadPolylineEntity, CadVertex } from "./types";
 
@@ -27,7 +27,7 @@ function newOverlayId(prefix: string) {
 }
 
 function defaultGeoref(utmZone = 23): CadGeorefContext {
-  return { utmZone, eastingAxis: "x", northingAxis: "y", isGeoreferenced: true };
+  return createCadGeorefContext(utmZone);
 }
 
 function toVertex(lon: number, lat: number, z: number | undefined, georef: CadGeorefContext): CadVertex {

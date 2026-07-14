@@ -94,6 +94,16 @@ export function detectCadGeoref(
   return buildGeoref(utmZone, eastingAxis, northingAxis, isGeoreferenced);
 }
 
+/** Contexto UTM explícito (importação de overlays, APIs). */
+export function createCadGeorefContext(
+  utmZone: number,
+  eastingAxis: "x" | "y" = "x",
+  northingAxis: "x" | "y" = "y",
+  isGeoreferenced = true,
+): CadGeorefContext {
+  return buildGeoref(utmZone, eastingAxis, northingAxis, isGeoreferenced);
+}
+
 export function detectCadGeorefFromProject(
   project: CadProject,
   viewport?: { minX: number; maxX: number; minY: number; maxY: number },

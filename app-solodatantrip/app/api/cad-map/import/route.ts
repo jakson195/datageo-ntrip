@@ -10,6 +10,7 @@ import {
   type OverlayImportSource,
   queryArcGisGeoJson,
 } from "@/lib/rtk-validation/cad/import-map-overlay";
+import { createCadGeorefContext } from "@/lib/rtk-validation/cad/georef";
 import { isBboxInBrazil } from "@/lib/rtk-validation/cad/map-bbox";
 
 const QUERY_LAYERS: Record<
@@ -30,12 +31,12 @@ export async function GET(request: NextRequest) {
   const utmZoneRaw = Number(searchParams.get("utmZone"));
   const utmZone = Number.isFinite(utmZoneRaw) ? utmZoneRaw : 23;
   const swapEn = searchParams.get("swapEn") === "1";
-  const georef = {
+  const georef = createCadGeorefContext(
     utmZone,
-    eastingAxis: swapEn ? ("y" as const) : ("x" as const),
-    northingAxis: swapEn ? ("x" as const) : ("y" as const),
-    isGeoreferenced: true,
-  };
+    swapEn ? "y" : "x",
+    swapEn ? "x" : "y",
+    true,
+  );
 
   if (source !== "anm" && source !== "hidro") {
     return NextResponse.json({ error: "Parâmetro source inválido (anm | hidro)." }, { status: 400 });
