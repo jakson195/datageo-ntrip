@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <PlatformTarget>x64</PlatformTarget>
+    <RootNamespace>DatageoNtripCad</RootNamespace>
+    <AssemblyName>DatageoNtripCad</AssemblyName>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <!-- Altere para 2023, 2025 etc. conforme sua instalação -->
+    <ACAD_VERSION>2024</ACAD_VERSION>
+    <ACAD_DIR>$(ProgramFiles)\Autodesk\AutoCAD $(ACAD_VERSION)</ACAD_DIR>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="AcCoreMgd">
+      <HintPath>$(ACAD_DIR)\AcCoreMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AcDbMgd">
+      <HintPath>$(ACAD_DIR)\AcDbMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AcMgd">
+      <HintPath>$(ACAD_DIR)\AcMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+
+  <Target Name="CopyPackageContents" AfterTargets="Build">
+    <PropertyGroup>
+      <PackageDir>$(ProjectDir)..\PackageContents\DatageoNtripCad.bundle\Contents\</PackageDir>
+    </PropertyGroup>
+    <MakeDir Directories="$(PackageDir)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PackageDir)" />
+    <Copy SourceFiles="$(ProjectDir)PackageContents.xml" DestinationFolder="$(ProjectDir)..\PackageContents\DatageoNtripCad.bundle\" />
+  </Target>
+</Project>
