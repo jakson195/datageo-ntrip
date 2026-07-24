@@ -34,6 +34,10 @@ export interface CadCommandsPanelProps {
   onCancelProfilePick?: () => void;
   profilePickResult?: string | null;
   onClearProfilePickResult?: () => void;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onFitView?: () => void;
+  variant?: "full" | "profileOnly";
 }
 
 type CommandBtn = {
@@ -79,6 +83,10 @@ export function CadCommandsPanel({
   onCancelProfilePick,
   profilePickResult,
   onClearProfilePickResult,
+  onZoomIn,
+  onZoomOut,
+  onFitView,
+  variant = "full",
 }: CadCommandsPanelProps) {
   const t = useTranslations("rtkCad.commands");
   const tAi = useTranslations("rtkCad.ai");
@@ -440,10 +448,115 @@ export function CadCommandsPanel({
     else reader.readAsText(file, "utf-8");
   };
 
+  const profileSection = (
+    <div className="rounded-lg border border-[#e5e7eb] bg-white p-3">
+      <h4 className="text-xs font-semibold text-[#0f2848]">{t("profileOps.title")}</h4>
+      <p className="mt-0.5 text-[10px] text-[#6b7280]">{t("profileOps.hint")}</p>
+
+      {pendingProfileStart ? (
+        <p className="mt-2 rounded-md bg-amber-50 px-2 py-1.5 text-[10px] text-amber-800">
+          {t("profileOps.pendingStart", { point: pendingProfileStart })}
+        </p>
+      ) : null}
+
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <label className="block text-xs font-medium text-[#374151]">
+          {t("profileOps.startPoint")}
+          <input
+            type="text"
+            value={profileStart}
+            onChange={(e) => setProfileStart(e.target.value)}
+            placeholder="P1"
+            className="mt-1 w-full rounded-lg border border-[#d1d5db] px-2 py-2 text-xs"
+          />
+        </label>
+        <label className="block text-xs font-medium text-[#374151]">
+          {t("profileOps.endPoint")}
+          <input
+            type="text"
+            value={profileEnd}
+            onChange={(e) => setProfileEnd(e.target.value)}
+            placeholder="P2"
+            className="mt-1 w-full rounded-lg border border-[#d1d5db] px-2 py-2 text-xs"
+          />
+        </label>
+      </div>
+
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          disabled={busy !== null || profilePickActive}
+          onClick={startProfilePick}
+          className="rounded-lg border border-[#0891b2] px-2 py-2 text-xs font-medium text-[#0891b2] hover:bg-[#ecfeff] disabled:opacity-50"
+        >
+          {profilePickActive ? t("profileOps.picking") : t("profileOps.pickOnCanvas")}
+        </button>
+        <button
+          type="button"
+          disabled={busy !== null}
+          onClick={applyProfile}
+          className="rounded-lg bg-[#0891b2] px-2 py-2 text-xs font-semibold text-white disabled:opacity-50"
+        >
+          {busy === "profileApply" ? "…" : t("profileOps.generate")}
+        </button>
+      </div>
+
+      {profilePickActive ? (
+        <button
+          type="button"
+          onClick={cancelProfilePick}
+          className="mt-2 w-full rounded-lg border border-[#d1d5db] px-2 py-1.5 text-xs text-[#6b7280] hover:bg-[#f9fafb]"
+        >
+          {t("profileOps.cancelPick")}
+        </button>
+      ) : null}
+    </div>
+  );
+
+  if (variant === "profileOnly") {
+    return (
+      <div className="space-y-3">
+        {profileSection}
+        {notice ? <p className="text-xs text-emerald-700">{notice}</p> : null}
+        {error ? <p className="text-xs text-red-600">{error}</p> : null}
+      </div>
+    );
+  }
+
   return (
     <section className="rounded-xl border border-[#c4b5fd] bg-gradient-to-b from-[#faf5ff] to-white p-4">
       <h3 className="text-sm font-semibold text-[#0f2848]">{t("title")}</h3>
       <p className="mt-0.5 text-xs text-[#6b7280]">{t("hint")}</p>
+
+      {onZoomIn && onZoomOut && onFitView ? (
+        <div className="mt-3 rounded-lg border border-[#e5e7eb] bg-white p-3">
+          <h4 className="text-xs font-semibold text-[#0f2848]">{t("zoomOps.title")}</h4>
+          <p className="mt-0.5 text-[10px] text-[#6b7280]">{t("zoomOps.hint")}</p>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={onZoomOut}
+              className="rounded-lg border border-[#d1d5db] px-2 py-2 text-xs font-semibold text-[#0f2848] hover:bg-[#f9fafb]"
+            >
+              {t("zoomOps.out")}
+            </button>
+            <button
+              type="button"
+              onClick={onZoomIn}
+              className="rounded-lg border border-[#d1d5db] px-2 py-2 text-xs font-semibold text-[#0f2848] hover:bg-[#f9fafb]"
+            >
+              {t("zoomOps.in")}
+            </button>
+            <button
+              type="button"
+              onClick={onFitView}
+              className="rounded-lg bg-[#0f2848] px-2 py-2 text-xs font-semibold text-white"
+            >
+              {t("zoomOps.fit")}
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-3 rounded-lg border border-[#e5e7eb] bg-white p-3">
         <h4 className="text-xs font-semibold text-[#0f2848]">{t("createPointOps.title")}</h4>
@@ -504,69 +617,6 @@ export function CadCommandsPanel({
         >
           {busy === "createPointApply" ? t("working") : t("createPointOps.insert")}
         </button>
-      </div>
-
-      <div className="mt-3 rounded-lg border border-[#e5e7eb] bg-white p-3">
-        <h4 className="text-xs font-semibold text-[#0f2848]">{t("profileOps.title")}</h4>
-        <p className="mt-0.5 text-[10px] text-[#6b7280]">{t("profileOps.hint")}</p>
-
-        {pendingProfileStart ? (
-          <p className="mt-2 rounded-md bg-amber-50 px-2 py-1.5 text-[10px] text-amber-800">
-            {t("profileOps.pendingStart", { point: pendingProfileStart })}
-          </p>
-        ) : null}
-
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          <label className="block text-xs font-medium text-[#374151]">
-            {t("profileOps.startPoint")}
-            <input
-              type="text"
-              value={profileStart}
-              onChange={(e) => setProfileStart(e.target.value)}
-              placeholder="P1"
-              className="mt-1 w-full rounded-lg border border-[#d1d5db] px-2 py-2 text-xs"
-            />
-          </label>
-          <label className="block text-xs font-medium text-[#374151]">
-            {t("profileOps.endPoint")}
-            <input
-              type="text"
-              value={profileEnd}
-              onChange={(e) => setProfileEnd(e.target.value)}
-              placeholder="P2"
-              className="mt-1 w-full rounded-lg border border-[#d1d5db] px-2 py-2 text-xs"
-            />
-          </label>
-        </div>
-
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            disabled={busy !== null || profilePickActive}
-            onClick={startProfilePick}
-            className="rounded-lg border border-[#0891b2] px-2 py-2 text-xs font-medium text-[#0891b2] hover:bg-[#ecfeff] disabled:opacity-50"
-          >
-            {profilePickActive ? t("profileOps.picking") : t("profileOps.pickOnCanvas")}
-          </button>
-          <button
-            type="button"
-            disabled={busy !== null}
-            onClick={applyProfile}
-            className="rounded-lg bg-[#0891b2] px-2 py-2 text-xs font-semibold text-white disabled:opacity-50"
-          >
-            {busy === "profileApply" ? "…" : t("profileOps.generate")}
-          </button>
-        </div>
-
-        {profilePickActive ? (
-          <button
-            type="button"
-            onClick={cancelProfilePick}
-            className="mt-2 w-full rounded-lg border border-[#d1d5db] px-2 py-1.5 text-xs text-[#6b7280] hover:bg-[#f9fafb]"
-          >
-            {t("profileOps.cancelPick")}
-          </button>
-        ) : null}
       </div>
 
       <div className="mt-3 rounded-lg border border-[#e5e7eb] bg-white p-3">

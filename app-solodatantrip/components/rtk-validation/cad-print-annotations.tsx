@@ -409,6 +409,7 @@ export function PrintLocationMap({
       utmProjectionLabel: `Fuso ${utmZone}S`,
       eastingAxis: swapEn ? "y" : "x",
       northingAxis: swapEn ? "x" : "y",
+      coordMode: "utm" as const,
       isGeoreferenced: true,
     }),
     [utmZone, swapEn],

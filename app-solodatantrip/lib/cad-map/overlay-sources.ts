@@ -51,7 +51,7 @@ export function detectCarUfFromBbox4326(bbox: Bbox4326): string {
   return best;
 }
 
-export function rankCarUfsFromBbox4326(bbox: Bbox4326, limit = 3): string[] {
+export function rankCarUfsFromBbox4326(bbox: Bbox4326, limit = 5): string[] {
   const [minLon, minLat, maxLon, maxLat] = bbox;
   const cx = (minLon + maxLon) / 2;
   const cy = (minLat + maxLat) / 2;

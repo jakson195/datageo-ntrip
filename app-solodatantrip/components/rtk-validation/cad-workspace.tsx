@@ -96,12 +96,15 @@ import { CadRasterLegend, CadRasterSvgLayer } from "@/components/rtk-validation/
 import { CadAiChat } from "@/components/rtk-validation/cad-ai-chat";
 import { CadCommandsPanel } from "@/components/rtk-validation/cad-commands-panel";
 import { CadLayersPanel } from "@/components/rtk-validation/cad-layers-panel";
+import { CadPointObservations } from "@/components/rtk-validation/cad-point-observations";
+import { CadToolsSidebar, type CadToolsTab } from "@/components/rtk-validation/cad-tools-sidebar";
 import { CadSvgMultilineText } from "@/components/rtk-validation/cad-svg-multiline-text";
 import { CadProfileView } from "@/components/rtk-validation/cad-profile-view";
 import type { CadAiSideEffect } from "@/lib/rtk-validation/cad/ai-command-types";
 import { executeCadAiCommand } from "@/lib/rtk-validation/cad/ai-command-executor";
 import { isTerrainProfileLayer } from "@/lib/rtk-validation/cad/profile";
-import { viewportBbox4326, isViewportSmallEnoughForImport } from "@/lib/rtk-validation/cad/map-tiles";
+import { isViewportSmallEnoughForImport } from "@/lib/rtk-validation/cad/map-tiles";
+import { viewportBbox4326Georef } from "@/lib/rtk-validation/cad/georef";
 import { mergeOverlayImport, type OverlayImportSource } from "@/lib/rtk-validation/cad/import-map-overlay";
 
 type CadTabId = "desenho" | "layout";
@@ -139,6 +142,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
   const t = useTranslations("rtkCad");
   const router = useRouter();
   const svgRef = useRef<SVGSVGElement>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [project, setProject] = useState<CadProject>(() => emptyProject("Projeto CAD"));
   const [activeLayerId, setActiveLayerId] = useState("draw");
   const [tool, setTool] = useState<CadTool>("select");
@@ -147,7 +151,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
   const [draft, setDraft] = useState<CadVertex[]>([]);
   const [panning, setPanning] = useState<{ startX: number; startY: number; bounds: ViewBounds } | null>(null);
   const [cursor, setCursor] = useState<{ x: number; y: number; z: number } | null>(null);
-  const [imported, setImported] = useState(true);
+  const [imported, setImported] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
   const [memorialForm, setMemorialForm] = useState<MemorialFormDefaults>(() => defaultMemorialForm());
   const [memorialFooterOpen, setMemorialFooterOpen] = useState(true);
@@ -183,6 +187,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
   const [keyboardDistance, setKeyboardDistance] = useState("");
   const [drawPreview, setDrawPreview] = useState<CadVertex | null>(null);
   const [basemapOverlays, setBasemapOverlays] = useState<CadBasemapOverlays>({
+    satellite: false,
     car: false,
     anm: false,
     hidro: false,
@@ -207,6 +212,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
   const [distancePickResult, setDistancePickResult] = useState<string | null>(null);
   const [profilePickMode, setProfilePickMode] = useState(false);
   const [profilePickIds, setProfilePickIds] = useState<string[]>([]);
+  const [toolsTab, setToolsTab] = useState<CadToolsTab>("draw");
   const [profilePickResult, setProfilePickResult] = useState<string | null>(null);
   const [selectedVertexIndex, setSelectedVertexIndex] = useState<number | null>(null);
   const [vertexDragIndex, setVertexDragIndex] = useState<number | null>(null);
@@ -305,7 +311,8 @@ export function CadWorkspace({ userId }: { userId: string }) {
     [bounds, width, height, padding],
   );
 
-  const hasBasemap = basemapOverlays.car || basemapOverlays.anm || basemapOverlays.hidro;
+  const hasBasemap =
+    basemapOverlays.satellite || basemapOverlays.car || basemapOverlays.anm || basemapOverlays.hidro;
   const hasUnderlay = hasBasemap || displayRasters.some((r) => r.visible);
 
   const projectGeoref = useMemo(
@@ -340,7 +347,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
           setOverlayNotice(t("basemap.importTooLarge"));
           return;
         }
-        const bbox = viewportBbox4326(bounds, projectGeoref.utmZone, visibleEntities, project.crs);
+        const bbox = viewportBbox4326Georef(bounds, projectGeoref);
         const bboxStr = [bbox.minLon, bbox.minLat, bbox.maxLon, bbox.maxLat]
           .map((n) => n.toFixed(6))
           .join(",");
@@ -611,6 +618,23 @@ export function CadWorkspace({ userId }: { userId: string }) {
     skipDraftSaveRef.current = true;
 
     async function bootstrapProject() {
+      const payload = loadCadImportPayload();
+      if (payload) {
+        const built = buildCadProjectFromPayload(payload);
+        clearCadImportPayload();
+        clearCadDraft(userId);
+        setProject(built);
+        setSavedProjectId(null);
+        setViewBounds(computeViewportBoundsSafe(built.entities));
+        setImported(built.entities.length > 0);
+        if (built.entities.length > 0) {
+          setImportNotice(t("import.rtkOk", { count: built.entities.length, name: built.name }));
+        }
+        await refreshSavedProjects();
+        skipDraftSaveRef.current = false;
+        return;
+      }
+
       const draft = loadCadDraft(userId);
       if (draft?.project) {
         setProject(draft.project);
@@ -640,17 +664,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
         }
       }
 
-      const payload = loadCadImportPayload();
-      if (payload) {
-        const built = buildCadProjectFromPayload(payload);
-        setProject(built);
-        setViewBounds(computeViewportBoundsSafe(built.entities));
-        setImported(true);
-        await refreshSavedProjects();
-        skipDraftSaveRef.current = false;
-        return;
-      }
-
+      setImported(false);
       await refreshSavedProjects();
       skipDraftSaveRef.current = false;
     }
@@ -735,7 +749,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
         setImported(record.project.entities.length > 0);
         setSelectedId(null);
         setRasters([]);
-        setBasemapOverlays({ car: false, anm: false, hidro: false });
+        setBasemapOverlays({ satellite: false, car: false, anm: false, hidro: false });
         resetWorkspaceModes();
         setOpenProjectsPanel(false);
         setActiveTab("desenho");
@@ -786,7 +800,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
       setSelectedId(null);
       setViewBounds(computeViewportBoundsSafe([]));
       setRasters([]);
-      setBasemapOverlays({ car: false, anm: false, hidro: false });
+      setBasemapOverlays({ satellite: false, car: false, anm: false, hidro: false });
       setImportNotice(null);
       setImportingPoints(false);
       setImportingRaster(false);
@@ -1680,11 +1694,21 @@ export function CadWorkspace({ userId }: { userId: string }) {
     applyZoom(ZOOM_OUT_FACTOR);
   }
 
-  function onWheel(e: React.WheelEvent<SVGSVGElement>) {
-    e.preventDefault();
-    const { sx, sy } = toViewBoxCoords(e.clientX, e.clientY);
-    applyZoom(e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR, sx, sy);
-  }
+  const applyZoomRef = useRef(applyZoom);
+  applyZoomRef.current = applyZoom;
+
+  useEffect(() => {
+    const el = canvasContainerRef.current;
+    if (!el) return;
+    const handler = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const { sx, sy } = toViewBoxCoords(e.clientX, e.clientY);
+      applyZoomRef.current(e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR, sx, sy);
+    };
+    el.addEventListener("wheel", handler, { passive: false });
+    return () => el.removeEventListener("wheel", handler);
+  }, []);
 
   function renderCoordinateGrid() {
     if (!showGrid) return null;
@@ -1909,6 +1933,12 @@ export function CadWorkspace({ userId }: { userId: string }) {
 
   return (
     <div className="cad-workspace space-y-4 text-[#111827]">
+      <CadPointObservations
+        entities={project.entities}
+        layers={project.layers}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
+      />
       <div className="cad-interface flex flex-col gap-3 rounded-xl border border-[#e5e7eb] bg-white p-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 flex-1">
           <label className="text-xs font-medium text-[#6b7280]">{t("project.nameLabel")}</label>
@@ -1970,6 +2000,14 @@ export function CadWorkspace({ userId }: { userId: string }) {
           <label className="flex items-center gap-2 rounded-lg border border-[#d1d5db] px-3 py-2 text-sm">
             <input type="checkbox" checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} />
             {t("grid.show")}
+          </label>
+          <label className="flex items-center gap-2 rounded-lg border border-[#d1d5db] px-3 py-2 text-sm" title={t("basemap.satelliteHint")}>
+            <input
+              type="checkbox"
+              checked={basemapOverlays.satellite}
+              onChange={(e) => patchBasemapOverlay("satellite", e.target.checked)}
+            />
+            {t("basemap.satellite")}
           </label>
           <label className="flex items-center gap-2 rounded-lg border border-[#d1d5db] px-3 py-2 text-sm">
             <input
@@ -2056,6 +2094,20 @@ export function CadWorkspace({ userId }: { userId: string }) {
         </div>
         {exportError ? <p className="text-xs font-medium text-red-600">{exportError}</p> : null}
       </div>
+
+      {importNotice ? (
+        <div
+          className={`cad-interface rounded-xl border px-4 py-3 text-sm ${
+            importNotice.includes("Falha") ||
+            importNotice.includes("Nenhum") ||
+            importNotice.includes("GDAL")
+              ? "border-red-200 bg-red-50 text-red-800"
+              : "border-emerald-200 bg-emerald-50 text-emerald-800"
+          }`}
+        >
+          {importNotice}
+        </div>
+      ) : null}
 
       {openProjectsPanel ? (
         <section className="cad-interface relative z-20 rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
@@ -2187,7 +2239,309 @@ export function CadWorkspace({ userId }: { userId: string }) {
               ) : null}
             </div>
           ) : null}
-          <div className="cad-interface grid gap-4 xl:grid-cols-[1fr_300px]">
+          <div className="cad-interface grid gap-4 xl:grid-cols-[240px_1fr_280px]">
+          <CadToolsSidebar
+            activeTab={toolsTab}
+            onTabChange={setToolsTab}
+            sections={{
+              draw: (
+                <div className="space-y-4">
+                  <section>
+                    <h3 className="text-sm font-semibold text-[#0f2848]">{t("import.title")}</h3>
+                    <p className="mt-1 text-xs text-[#6b7280]">{t("import.hint")}</p>
+                    <div className="mt-3 flex flex-col gap-2">
+                      <button
+                        type="button"
+                        disabled={importingPoints || importingRaster}
+                        onClick={openSurveyImport}
+                        className="rounded-lg border border-[#38bdf8] px-3 py-2 text-xs font-medium text-[#0369a1] hover:bg-[#f0f9ff] disabled:opacity-50"
+                      >
+                        {importingPoints ? t("import.working") : t("import.pointsFile")}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={importingPoints || importingRaster}
+                        onClick={openExcelImport}
+                        className="rounded-lg border border-[#0f2848] px-3 py-2 text-xs font-medium text-[#0f2848] hover:bg-[#f0f4f8] disabled:opacity-50"
+                      >
+                        {importingPoints ? t("import.working") : t("import.excel")}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={importingRaster || importingPoints}
+                        onClick={() => window.requestAnimationFrame(() => orthoFileRef.current?.click())}
+                        className="rounded-lg border border-[#16a34a] px-3 py-2 text-xs font-medium text-[#15803d] hover:bg-[#f0fdf4] disabled:opacity-50"
+                      >
+                        {importingRaster ? t("import.working") : t("import.orthophoto")}
+                      </button>
+                    </div>
+                  </section>
+                  <section>
+                    <h3 className="text-sm font-semibold text-[#0f2848]">{t("draw.optionsTitle")}</h3>
+                    <div className="mt-3 space-y-2">
+                      <label className="flex items-center gap-2 text-xs text-[#374151]">
+                        <input
+                          type="checkbox"
+                          checked={snapToRtkPoints}
+                          onChange={(e) => {
+                            setSnapToRtkPoints(e.target.checked);
+                            setDrawHint(null);
+                          }}
+                        />
+                        {t("draw.snapRtk")}
+                      </label>
+                      <label className="flex items-center gap-2 text-xs text-[#374151]">
+                        <input
+                          type="checkbox"
+                          checked={orthogonalMode}
+                          onChange={(e) => setOrthogonalMode(e.target.checked)}
+                        />
+                        {t("draw.orthogonal")}
+                      </label>
+                    </div>
+                    {canUsePolar ? (
+                      <div className="mt-4 space-y-2 border-t border-[#e5e7eb] pt-4">
+                        <p className="text-xs font-medium text-[#374151]">{t("draw.polarTitle")}</p>
+                        <p className="text-[10px] text-[#6b7280]">{t("draw.polarHint")}</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <label className="text-[10px] text-[#6b7280]">
+                            {t("draw.distance")}
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              value={polarDistance}
+                              onChange={(e) => setPolarDistance(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") applyPolarVertex();
+                              }}
+                              placeholder="10.00"
+                              className="mt-1 w-full rounded-lg border border-[#d1d5db] px-2 py-1.5 font-mono text-xs"
+                            />
+                          </label>
+                          <label className="text-[10px] text-[#6b7280]">
+                            {t("draw.angle")}
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              value={polarAngle}
+                              onChange={(e) => setPolarAngle(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") applyPolarVertex();
+                              }}
+                              placeholder="45"
+                              className="mt-1 w-full rounded-lg border border-[#d1d5db] px-2 py-1.5 font-mono text-xs"
+                            />
+                          </label>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => applyPolarVertex()}
+                          className="w-full rounded-lg bg-[#0f2848] px-3 py-2 text-xs font-medium text-white"
+                        >
+                          {t("draw.applyPolar")}
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-[10px] text-[#9ca3af]">{t("draw.polarNeedReference")}</p>
+                    )}
+                  </section>
+                  {tool === "polyline" && snapToRtkPoints ? (
+                    <section>
+                      <h3 className="text-sm font-semibold text-[#0f2848]">{t("draw.pointPicker")}</h3>
+                      <p className="mt-1 text-xs text-[#6b7280]">{t("draw.pickerHint")}</p>
+                      <input
+                        type="search"
+                        value={pointSearch}
+                        onChange={(e) => setPointSearch(e.target.value)}
+                        placeholder={t("draw.searchPlaceholder")}
+                        className="mt-3 w-full rounded-lg border border-[#d1d5db] px-3 py-2 text-xs"
+                      />
+                      <ul className="mt-3 max-h-48 space-y-1 overflow-y-auto">
+                        {filteredPickablePoints.length === 0 ? (
+                          <li className="text-xs text-[#9ca3af]">{t("draw.noPoints")}</li>
+                        ) : (
+                          filteredPickablePoints.map((p) => {
+                            const inDraft = draft.some(
+                              (v) => Math.hypot(v.x - p.vertex.x, v.y - p.vertex.y) < 1e-4,
+                            );
+                            return (
+                              <li key={p.id}>
+                                <button
+                                  type="button"
+                                  onClick={() => pickPointFromList(p.id)}
+                                  className={`w-full rounded-lg border px-2 py-2 text-left text-xs transition ${
+                                    hoverSnapId === p.id
+                                      ? "border-[#00c8f0] bg-[#f0fdff]"
+                                      : "border-[#e5e7eb] hover:border-[#00c8f0]/50"
+                                  } ${inDraft ? "opacity-70" : ""}`}
+                                >
+                                  <span className="font-medium text-[#0f2848]">{p.label}</span>
+                                  <span className="mt-0.5 block font-mono text-[10px] text-[#6b7280]">
+                                    E {p.vertex.x.toFixed(3)} · N {p.vertex.y.toFixed(3)} · Z{" "}
+                                    {p.vertex.z.toFixed(3)}
+                                  </span>
+                                </button>
+                              </li>
+                            );
+                          })
+                        )}
+                      </ul>
+                    </section>
+                  ) : null}
+                </div>
+              ),
+              layers: (
+                <CadLayersPanel
+                  layers={normalizeCadLayers(project.layers)}
+                  activeLayerId={activeLayerId}
+                  entityCounts={layerEntityCounts}
+                  onToggleVisibility={toggleLayer}
+                  onSetActive={setActiveLayerId}
+                  onAddLayer={addLayer}
+                  onUpdateLayer={updateLayerStyles}
+                  onDeleteLayer={deleteLayer}
+                />
+              ),
+              contour: (
+                <section>
+                  <h3 className="text-sm font-semibold text-[#0f2848]">{t("contour.title")}</h3>
+                  <p className="mt-1 text-xs text-[#6b7280]">{t("contour.hint")}</p>
+                  <p className="mt-2 text-xs font-medium text-[#374151]">
+                    {t("contour.points", { count: elevationSamples.length })}
+                  </p>
+                  <label className="mt-3 block text-xs text-[#6b7280]">
+                    {t("contour.interval")}
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={contourInterval}
+                      onChange={(e) => setContourInterval(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-[#d1d5db] px-3 py-2 font-mono text-sm text-[#111827]"
+                    />
+                  </label>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={generatingContours || elevationSamples.length < 3}
+                      onClick={generateContours}
+                      className="flex-1 rounded-lg bg-[#7c3aed] px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"
+                    >
+                      {generatingContours ? t("contour.generating") : t("contour.generate")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearContours}
+                      className="rounded-lg border border-[#d1d5db] px-3 py-2 text-xs"
+                    >
+                      {t("contour.clear")}
+                    </button>
+                  </div>
+                  {contourError ? <p className="mt-2 text-xs text-red-600">{contourError}</p> : null}
+                  {contourInfo ? <p className="mt-2 text-xs text-emerald-700">{contourInfo}</p> : null}
+                  {elevationSamples.length < 3 ? (
+                    <p className="mt-2 text-xs text-amber-700">{t("contour.needPoints")}</p>
+                  ) : null}
+                </section>
+              ),
+              tin: (
+                <section>
+                  <h3 className="text-sm font-semibold text-[#0f2848]">{t("tin.title")}</h3>
+                  <p className="mt-1 text-xs text-[#6b7280]">{t("tin.hint")}</p>
+                  <p className="mt-2 text-xs font-medium text-[#374151]">
+                    {t("contour.points", { count: elevationSamples.length })}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={generatingTin || elevationSamples.length < 3}
+                      onClick={generateTin}
+                      className="flex-1 rounded-lg bg-[#6366f1] px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"
+                    >
+                      {generatingTin ? t("tin.generating") : t("tin.generate")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearTin}
+                      className="rounded-lg border border-[#d1d5db] px-3 py-2 text-xs"
+                    >
+                      {t("tin.clear")}
+                    </button>
+                  </div>
+                  {tinError ? <p className="mt-2 text-xs text-red-600">{tinError}</p> : null}
+                  {tinInfo ? <p className="mt-2 text-xs text-emerald-700">{tinInfo}</p> : null}
+                  {elevationSamples.length < 3 ? (
+                    <p className="mt-2 text-xs text-amber-700">{t("tin.needPoints")}</p>
+                  ) : null}
+                </section>
+              ),
+              hypsometric: (
+                <section>
+                  <h3 className="text-sm font-semibold text-[#0f2848]">{t("hypsometric.title")}</h3>
+                  <p className="mt-1 text-xs text-[#6b7280]">{t("hypsometric.hint")}</p>
+                  <p className="mt-2 text-xs font-medium text-[#374151]">
+                    {t("contour.points", { count: elevationSamples.length })}
+                  </p>
+                  <label className="mt-3 flex items-center gap-2 text-xs text-[#374151]">
+                    <input
+                      type="checkbox"
+                      checked={showHypsometricLegend}
+                      onChange={(e) => setShowHypsometricLegend(e.target.checked)}
+                    />
+                    {t("hypsometric.showLegend")}
+                  </label>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={generatingHypsometric || elevationSamples.length < 3}
+                      onClick={generateHypsometric}
+                      className="flex-1 rounded-lg bg-[#059669] px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"
+                    >
+                      {generatingHypsometric ? t("hypsometric.generating") : t("hypsometric.generate")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearHypsometric}
+                      className="rounded-lg border border-[#d1d5db] px-3 py-2 text-xs"
+                    >
+                      {t("hypsometric.clear")}
+                    </button>
+                  </div>
+                  {hypsometricError ? <p className="mt-2 text-xs text-red-600">{hypsometricError}</p> : null}
+                  {hypsometricInfo ? <p className="mt-2 text-xs text-emerald-700">{hypsometricInfo}</p> : null}
+                </section>
+              ),
+              profile: (
+                <div className="space-y-3">
+                  <CadCommandsPanel
+                    variant="profileOnly"
+                    project={project}
+                    selectedId={selectedId}
+                    memorialForm={memorialForm}
+                    onProjectChange={setProject}
+                    onSelectedIdChange={setSelectedId}
+                    onSideEffect={handleAiSideEffect}
+                    profilePickActive={profilePickMode}
+                    onStartProfilePick={() => {
+                      setAreaPickMode(false);
+                      setDistancePickMode(false);
+                      setDistancePickIds([]);
+                      setProfilePickMode(true);
+                      setProfilePickIds([]);
+                      setProfilePickResult(null);
+                    }}
+                    onCancelProfilePick={() => {
+                      setProfilePickMode(false);
+                      setProfilePickIds([]);
+                    }}
+                    profilePickResult={profilePickResult}
+                    onClearProfilePickResult={() => setProfilePickResult(null)}
+                  />
+                  <p className="text-[10px] text-[#6b7280]">{t("commands.profileOps.chartHint")}</p>
+                </div>
+              ),
+            }}
+          />
+
           <div className="flex min-w-0 flex-col gap-4">
           <div className="overflow-hidden rounded-xl border border-[#1e293b] bg-[#0b1220]">
             <div className="flex flex-wrap gap-1 border-b border-[#1e293b] p-2">
@@ -2384,13 +2738,14 @@ export function CadWorkspace({ userId }: { userId: string }) {
               </div>
             ) : null}
 
-            <div className="relative">
+            <div ref={canvasContainerRef} className="relative">
             {hasBasemap ? (
               <CadBasemapLayer
                 viewport={viewport}
-                entities={project.entities}
+                entities={visibleEntities}
                 overlays={basemapOverlays}
                 crs={project.crs}
+                georef={projectGeoref}
               />
             ) : null}
             {displayRasters.some((r) => r.visible && r.kind === "hypsometric") ? (
@@ -2405,7 +2760,6 @@ export function CadWorkspace({ userId }: { userId: string }) {
               viewBox={`0 0 ${width} ${height}`}
               className={`relative z-10 ${areaPickMode || distancePickMode || profilePickMode || tool === "editPolygon" || tool !== "pan" ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing"}`}
               style={{ background: hasUnderlay ? "transparent" : undefined }}
-              onWheel={onWheel}
               onMouseMove={(e) => {
                 const rect = svgRef.current?.getBoundingClientRect();
                 if (!rect) return;
@@ -2627,6 +2981,9 @@ export function CadWorkspace({ userId }: { userId: string }) {
               onSelectedIdChange={setSelectedId}
               onSideEffect={handleAiSideEffect}
               onOpenAiChat={() => setAiChatOpen(true)}
+              onZoomIn={zoomIn}
+              onZoomOut={zoomOut}
+              onFitView={resetView}
               areaPickActive={areaPickMode}
               onStartAreaPick={() => {
                 setDistancePickMode(false);
@@ -2708,123 +3065,6 @@ export function CadWorkspace({ userId }: { userId: string }) {
               ) : null}
             </section>
 
-            {isDrawTool ? (
-              <section className="rounded-xl border border-[#e5e7eb] bg-white p-4">
-                <h3 className="text-sm font-semibold text-[#0f2848]">{t("draw.optionsTitle")}</h3>
-                <div className="mt-3 space-y-2">
-                  <label className="flex items-center gap-2 text-xs text-[#374151]">
-                    <input
-                      type="checkbox"
-                      checked={snapToRtkPoints}
-                      onChange={(e) => {
-                        setSnapToRtkPoints(e.target.checked);
-                        setDrawHint(null);
-                      }}
-                    />
-                    {t("draw.snapRtk")}
-                  </label>
-                  <label className="flex items-center gap-2 text-xs text-[#374151]">
-                    <input
-                      type="checkbox"
-                      checked={orthogonalMode}
-                      onChange={(e) => setOrthogonalMode(e.target.checked)}
-                    />
-                    {t("draw.orthogonal")}
-                  </label>
-                </div>
-
-                {canUsePolar ? (
-                  <div className="mt-4 space-y-2 border-t border-[#e5e7eb] pt-4">
-                    <p className="text-xs font-medium text-[#374151]">{t("draw.polarTitle")}</p>
-                    <p className="text-[10px] text-[#6b7280]">{t("draw.polarHint")}</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <label className="text-[10px] text-[#6b7280]">
-                        {t("draw.distance")}
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          value={polarDistance}
-                          onChange={(e) => setPolarDistance(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") applyPolarVertex();
-                          }}
-                          placeholder="10.00"
-                          className="mt-1 w-full rounded-lg border border-[#d1d5db] px-2 py-1.5 font-mono text-xs"
-                        />
-                      </label>
-                      <label className="text-[10px] text-[#6b7280]">
-                        {t("draw.angle")}
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          value={polarAngle}
-                          onChange={(e) => setPolarAngle(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") applyPolarVertex();
-                          }}
-                          placeholder="45"
-                          className="mt-1 w-full rounded-lg border border-[#d1d5db] px-2 py-1.5 font-mono text-xs"
-                        />
-                      </label>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => applyPolarVertex()}
-                      className="w-full rounded-lg bg-[#0f2848] px-3 py-2 text-xs font-medium text-white"
-                    >
-                      {t("draw.applyPolar")}
-                    </button>
-                  </div>
-                ) : (
-                  <p className="mt-3 text-[10px] text-[#9ca3af]">{t("draw.polarNeedReference")}</p>
-                )}
-              </section>
-            ) : null}
-
-            {tool === "polyline" && snapToRtkPoints ? (
-              <section className="rounded-xl border border-[#e5e7eb] bg-white p-4">
-                <h3 className="text-sm font-semibold text-[#0f2848]">{t("draw.pointPicker")}</h3>
-                <p className="mt-1 text-xs text-[#6b7280]">{t("draw.pickerHint")}</p>
-                <input
-                  type="search"
-                  value={pointSearch}
-                  onChange={(e) => setPointSearch(e.target.value)}
-                  placeholder={t("draw.searchPlaceholder")}
-                  className="mt-3 w-full rounded-lg border border-[#d1d5db] px-3 py-2 text-xs"
-                />
-                <ul className="mt-3 max-h-48 space-y-1 overflow-y-auto">
-                  {filteredPickablePoints.length === 0 ? (
-                    <li className="text-xs text-[#9ca3af]">{t("draw.noPoints")}</li>
-                  ) : (
-                    filteredPickablePoints.map((p) => {
-                      const inDraft = draft.some(
-                        (v) => Math.hypot(v.x - p.vertex.x, v.y - p.vertex.y) < 1e-4,
-                      );
-                      return (
-                        <li key={p.id}>
-                          <button
-                            type="button"
-                            onClick={() => pickPointFromList(p.id)}
-                            className={`w-full rounded-lg border px-2 py-2 text-left text-xs transition ${
-                              hoverSnapId === p.id
-                                ? "border-[#00c8f0] bg-[#f0fdff]"
-                                : "border-[#e5e7eb] hover:border-[#00c8f0]/50"
-                            } ${inDraft ? "opacity-70" : ""}`}
-                          >
-                            <span className="font-medium text-[#0f2848]">{p.label}</span>
-                            <span className="mt-0.5 block font-mono text-[10px] text-[#6b7280]">
-                              E {p.vertex.x.toFixed(3)} · N {p.vertex.y.toFixed(3)} · Z{" "}
-                              {p.vertex.z.toFixed(3)}
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })
-                  )}
-                </ul>
-              </section>
-            ) : null}
-
             <section className="rounded-xl border border-[#e5e7eb] bg-white p-4">
               <h3 className="text-sm font-semibold text-[#0f2848]">{t("basemap.importTitle")}</h3>
               <p className="mt-1 text-xs text-[#6b7280]">{t("basemap.importHint")}</p>
@@ -2850,17 +3090,6 @@ export function CadWorkspace({ userId }: { userId: string }) {
                 <p className="mt-2 text-xs text-[#374151]">{overlayNotice}</p>
               ) : null}
             </section>
-
-            <CadLayersPanel
-              layers={normalizeCadLayers(project.layers)}
-              activeLayerId={activeLayerId}
-              entityCounts={layerEntityCounts}
-              onToggleVisibility={toggleLayer}
-              onSetActive={setActiveLayerId}
-              onAddLayer={addLayer}
-              onUpdateLayer={updateLayerStyles}
-              onDeleteLayer={deleteLayer}
-            />
 
             <section className="rounded-xl border border-[#e5e7eb] bg-white p-4">
               <h3 className="text-sm font-semibold text-[#0f2848]">{t("properties.title")}</h3>
@@ -3050,115 +3279,6 @@ export function CadWorkspace({ userId }: { userId: string }) {
               ) : (
                 <p className="mt-3 text-xs text-[#6b7280]">{t("properties.none")}</p>
               )}
-            </section>
-
-            <section className="rounded-xl border border-[#e5e7eb] bg-white p-4">
-              <h3 className="text-sm font-semibold text-[#0f2848]">{t("contour.title")}</h3>
-              <p className="mt-1 text-xs text-[#6b7280]">{t("contour.hint")}</p>
-              <p className="mt-2 text-xs font-medium text-[#374151]">
-                {t("contour.points", { count: elevationSamples.length })}
-              </p>
-              <label className="mt-3 block text-xs text-[#6b7280]">
-                {t("contour.interval")}
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={contourInterval}
-                  onChange={(e) => setContourInterval(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-[#d1d5db] px-3 py-2 font-mono text-sm text-[#111827]"
-                />
-              </label>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={generatingContours || elevationSamples.length < 3}
-                  onClick={generateContours}
-                  className="flex-1 rounded-lg bg-[#7c3aed] px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"
-                >
-                  {generatingContours ? t("contour.generating") : t("contour.generate")}
-                </button>
-                <button
-                  type="button"
-                  onClick={clearContours}
-                  className="rounded-lg border border-[#d1d5db] px-3 py-2 text-xs"
-                >
-                  {t("contour.clear")}
-                </button>
-              </div>
-              {contourError ? (
-                <p className="mt-2 text-xs text-red-600">{contourError}</p>
-              ) : null}
-              {contourInfo ? (
-                <p className="mt-2 text-xs text-emerald-700">{contourInfo}</p>
-              ) : null}
-              {elevationSamples.length < 3 ? (
-                <p className="mt-2 text-xs text-amber-700">{t("contour.needPoints")}</p>
-              ) : null}
-            </section>
-
-            <section className="rounded-xl border border-[#e5e7eb] bg-white p-4">
-              <h3 className="text-sm font-semibold text-[#0f2848]">{t("tin.title")}</h3>
-              <p className="mt-1 text-xs text-[#6b7280]">{t("tin.hint")}</p>
-              <p className="mt-2 text-xs font-medium text-[#374151]">
-                {t("contour.points", { count: elevationSamples.length })}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={generatingTin || elevationSamples.length < 3}
-                  onClick={generateTin}
-                  className="flex-1 rounded-lg bg-[#6366f1] px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"
-                >
-                  {generatingTin ? t("tin.generating") : t("tin.generate")}
-                </button>
-                <button
-                  type="button"
-                  onClick={clearTin}
-                  className="rounded-lg border border-[#d1d5db] px-3 py-2 text-xs"
-                >
-                  {t("tin.clear")}
-                </button>
-              </div>
-              {tinError ? <p className="mt-2 text-xs text-red-600">{tinError}</p> : null}
-              {tinInfo ? <p className="mt-2 text-xs text-emerald-700">{tinInfo}</p> : null}
-              {elevationSamples.length < 3 ? (
-                <p className="mt-2 text-xs text-amber-700">{t("tin.needPoints")}</p>
-              ) : null}
-            </section>
-
-            <section className="rounded-xl border border-[#e5e7eb] bg-white p-4">
-              <h3 className="text-sm font-semibold text-[#0f2848]">{t("hypsometric.title")}</h3>
-              <p className="mt-1 text-xs text-[#6b7280]">{t("hypsometric.hint")}</p>
-              <p className="mt-2 text-xs font-medium text-[#374151]">
-                {t("contour.points", { count: elevationSamples.length })}
-              </p>
-              <label className="mt-3 flex items-center gap-2 text-xs text-[#374151]">
-                <input
-                  type="checkbox"
-                  checked={showHypsometricLegend}
-                  onChange={(e) => setShowHypsometricLegend(e.target.checked)}
-                />
-                {t("hypsometric.showLegend")}
-              </label>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={generatingHypsometric || elevationSamples.length < 3}
-                  onClick={generateHypsometric}
-                  className="flex-1 rounded-lg bg-[#059669] px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"
-                >
-                  {generatingHypsometric ? t("hypsometric.generating") : t("hypsometric.generate")}
-                </button>
-                <button
-                  type="button"
-                  onClick={clearHypsometric}
-                  className="rounded-lg border border-[#d1d5db] px-3 py-2 text-xs"
-                >
-                  {t("hypsometric.clear")}
-                </button>
-              </div>
-              {hypsometricError ? <p className="mt-2 text-xs text-red-600">{hypsometricError}</p> : null}
-              {hypsometricInfo ? <p className="mt-2 text-xs text-emerald-700">{hypsometricInfo}</p> : null}
             </section>
 
             <section className="rounded-xl border border-[#e5e7eb] bg-white p-4">

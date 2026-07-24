@@ -60,7 +60,10 @@ export async function fetchWmsMap(
   url.searchParams.set("transparent", "true");
 
   const upstream = await fetchWithTimeout(url.toString(), {
-    headers: { Accept: "image/png" },
+    headers: {
+      Accept: "image/png,image/jpeg,*/*",
+      "User-Agent": "DatageoNTRIP-CAD/1.0",
+    },
     next: { revalidate: 300 },
   });
 
@@ -93,7 +96,10 @@ export async function fetchArcGisWmsMap(
   url.searchParams.set("transparent", "true");
 
   const upstream = await fetchWithTimeout(url.toString(), {
-    headers: { Accept: "image/png" },
+    headers: {
+      Accept: "image/png,image/jpeg,*/*",
+      "User-Agent": "DatageoNTRIP-CAD/1.0",
+    },
     next: { revalidate: 300 },
   });
 

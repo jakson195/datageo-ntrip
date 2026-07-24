@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   const z = Number(searchParams.get("z"));
   const x = Number(searchParams.get("x"));
   const y = Number(searchParams.get("y"));
-  const source = searchParams.get("source") ?? "google";
+  const source = searchParams.get("source") ?? "esri";
 
   if (!Number.isInteger(z) || !Number.isInteger(x) || !Number.isInteger(y) || z < 0 || z > 22) {
     return NextResponse.json({ error: "Parâmetros z/x/y inválidos." }, { status: 400 });
