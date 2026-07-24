@@ -150,6 +150,9 @@ export function validateDatabaseEnv(): DatabaseConfigStatus {
 }
 
 export function applyRuntimeDatabaseUrl(): void {
+  if (!process.env.VERCEL) {
+    loadProjectEnvFiles();
+  }
   syncDatabaseEnvFromVercelPostgres();
   const status = validateDatabaseEnv();
   if (status.configured && process.env.DATABASE_URL) {
@@ -167,5 +170,8 @@ export function isDatabaseConfigured(): boolean {
 }
 
 export function getDatabaseConfigStatus(): DatabaseConfigStatus {
+  if (!process.env.VERCEL) {
+    loadProjectEnvFiles();
+  }
   return validateDatabaseEnv();
 }

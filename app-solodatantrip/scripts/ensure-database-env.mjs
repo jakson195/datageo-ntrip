@@ -2,6 +2,11 @@
  * Pre-build: sync Neon/Vercel env vars, validate Supabase URLs, run migrations on Vercel.
  */
 import { execSync } from "node:child_process";
+import { config } from "dotenv";
+import { resolve } from "node:path";
+
+config({ path: resolve(process.cwd(), ".env") });
+config({ path: resolve(process.cwd(), ".env.local"), override: true });
 
 const CONNECT_TIMEOUT = 10;
 

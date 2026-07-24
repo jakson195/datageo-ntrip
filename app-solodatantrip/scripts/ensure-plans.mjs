@@ -2,7 +2,12 @@
  * Garante planos base no PostgreSQL (idempotente).
  * Rodado no build da Vercel para evitar cadastro quebrado sem seed manual.
  */
+import { config } from "dotenv";
+import { resolve } from "node:path";
 import { PrismaClient } from "@prisma/client";
+
+config({ path: resolve(process.cwd(), ".env") });
+config({ path: resolve(process.cwd(), ".env.local"), override: true });
 
 const DATABASE_PLANS = [
   { slug: "trial", name: "Trial", price: 0, durationDays: 30, maxDevices: 1 },
