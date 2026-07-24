@@ -44,8 +44,18 @@ function disposeObject3D(obj: import("three").Object3D) {
     }
     if ("material" in child && child.material) {
       const material = child.material;
-      if (Array.isArray(material)) material.forEach((m) => m.dispose());
-      else material.dispose();
+      const disposeMaterial = (m: unknown) => {
+        if (
+          m &&
+          typeof m === "object" &&
+          "dispose" in m &&
+          typeof (m as { dispose?: () => void }).dispose === "function"
+        ) {
+          (m as { dispose: () => void }).dispose();
+        }
+      };
+      if (Array.isArray(material)) material.forEach(disposeMaterial);
+      else disposeMaterial(material);
     }
   });
 }

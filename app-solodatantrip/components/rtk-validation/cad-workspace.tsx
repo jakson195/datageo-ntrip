@@ -877,7 +877,6 @@ export function CadWorkspace({ userId }: { userId: string }) {
       });
       setImportNotice(null);
       setImportingPoints(false);
-      setImportingRaster(false);
       setContourInfo(null);
       setContourError(null);
       setTinInfo(null);
