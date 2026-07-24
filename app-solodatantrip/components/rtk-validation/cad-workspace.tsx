@@ -91,7 +91,13 @@ import type {
 } from "@/lib/rtk-validation/cad/types";
 import { downloadOdsBlob } from "@/lib/rtk-validation/ods-writer";
 import { CadPrintLayout } from "@/components/rtk-validation/cad-print-layout";
-import { CadBasemapAttribution, CadBasemapLayer, type CadBasemapOverlays } from "@/components/rtk-validation/cad-basemap-layer";
+import {
+  CadBasemapAttribution,
+  CadBasemapLayer,
+  DEFAULT_CAD_BASEMAP_OVERLAYS,
+  type AnmSigmineLayerKey,
+  type CadBasemapOverlays,
+} from "@/components/rtk-validation/cad-basemap-layer";
 import { CadRasterLegend, CadRasterSvgLayer } from "@/components/rtk-validation/cad-raster-overlay";
 import { CadAiChat } from "@/components/rtk-validation/cad-ai-chat";
 import { CadCommandsPanel } from "@/components/rtk-validation/cad-commands-panel";
@@ -105,7 +111,18 @@ import { executeCadAiCommand } from "@/lib/rtk-validation/cad/ai-command-executo
 import { isTerrainProfileLayer } from "@/lib/rtk-validation/cad/profile";
 import { isViewportSmallEnoughForImport } from "@/lib/rtk-validation/cad/map-tiles";
 import { viewportBbox4326Georef } from "@/lib/rtk-validation/cad/georef";
-import { mergeOverlayImport, type OverlayImportSource } from "@/lib/rtk-validation/cad/import-map-overlay";
+import {
+  ANM_SIGMINE_LAYER_KEYS,
+  ANM_SIGMINE_LAYERS,
+} from "@/lib/cad-map/overlay-sources";
+import {
+  mergeAnmLayerImport,
+  mergeOverlayImport,
+  mergeOverlayImportLegacy,
+  SICAR_CAD_LAYER,
+  type OverlayImportSource,
+} from "@/lib/rtk-validation/cad/import-map-overlay";
+import { anyAnmSigmineOverlay } from "@/lib/cad-map/anm-sigmine-layers";
 
 type CadTabId = "desenho" | "layout";
 
@@ -186,14 +203,18 @@ export function CadWorkspace({ userId }: { userId: string }) {
   const [polarAngle, setPolarAngle] = useState("");
   const [keyboardDistance, setKeyboardDistance] = useState("");
   const [drawPreview, setDrawPreview] = useState<CadVertex | null>(null);
-  const [basemapOverlays, setBasemapOverlays] = useState<CadBasemapOverlays>({
-    satellite: false,
-    car: false,
-    anm: false,
-    hidro: false,
-  });
-  const [importingOverlay, setImportingOverlay] = useState<OverlayImportSource | null>(null);
+  const [basemapOverlays, setBasemapOverlays] = useState<CadBasemapOverlays>(() => ({
+    ...DEFAULT_CAD_BASEMAP_OVERLAYS,
+    anmSigmine: { ...DEFAULT_CAD_BASEMAP_OVERLAYS.anmSigmine },
+  }));
+  const [importingOverlay, setImportingOverlay] = useState<string | null>(null);
   const [overlayNotice, setOverlayNotice] = useState<string | null>(null);
+  const [sicarCodigo, setSicarCodigo] = useState("");
+  const [sicarTemas, setSicarTemas] = useState<
+    { tema: string; areaTotalTema?: string; hasGeometry: boolean }[]
+  >([]);
+  const [sicarSelectedTemas, setSicarSelectedTemas] = useState<Set<string>>(new Set());
+  const [sicarLoading, setSicarLoading] = useState(false);
   const [savedProjectId, setSavedProjectId] = useState<string | null>(null);
   const [savedProjects, setSavedProjects] = useState<SavedCadProjectRecord[]>([]);
   const [openProjectsPanel, setOpenProjectsPanel] = useState(false);
@@ -312,7 +333,10 @@ export function CadWorkspace({ userId }: { userId: string }) {
   );
 
   const hasBasemap =
-    basemapOverlays.satellite || basemapOverlays.car || basemapOverlays.anm || basemapOverlays.hidro;
+    basemapOverlays.satellite ||
+    basemapOverlays.car ||
+    anyAnmSigmineOverlay(basemapOverlays.anmSigmine) ||
+    basemapOverlays.hidro;
   const hasUnderlay = hasBasemap || displayRasters.some((r) => r.visible);
 
   const projectGeoref = useMemo(
@@ -335,8 +359,9 @@ export function CadWorkspace({ userId }: { userId: string }) {
   }, [projectGeoref.isGeoreferenced, projectGeoref.utmProjectionLabel]);
 
   const handleImportOverlay = useCallback(
-    async (source: OverlayImportSource) => {
-      setImportingOverlay(source);
+    async (source: OverlayImportSource, anmLayer?: AnmSigmineLayerKey) => {
+      const importKey = source === "anm" && anmLayer ? `anm:${anmLayer}` : source;
+      setImportingOverlay(importKey);
       setOverlayNotice(null);
       try {
         if (!projectGeoref.isGeoreferenced) {
@@ -352,23 +377,44 @@ export function CadWorkspace({ userId }: { userId: string }) {
           .map((n) => n.toFixed(6))
           .join(",");
         const swapEn = projectGeoref.eastingAxis === "y" ? "1" : "0";
-        const res = await fetch(
-          `/api/cad-map/import?source=${source}&bbox=${encodeURIComponent(bboxStr)}&utmZone=${projectGeoref.utmZone}&swapEn=${swapEn}`,
-        );
+        const params = new URLSearchParams({
+          source,
+          bbox: bboxStr,
+          utmZone: String(projectGeoref.utmZone),
+          swapEn,
+        });
+        if (source === "anm" && anmLayer) {
+          params.set("anmLayer", anmLayer);
+        }
+        const res = await fetch(`/api/cad-map/import?${params.toString()}`);
         const data = (await res.json()) as {
           error?: string;
           entities?: CadEntity[];
           features?: number;
+          anmLayer?: AnmSigmineLayerKey;
         };
         if (!res.ok || !data.entities?.length) {
           setOverlayNotice(data.error ?? t("basemap.importEmpty"));
           return;
         }
         setProject((prev) => {
-          const merged = mergeOverlayImport(prev.layers, prev.entities, source, data.entities!);
+          if (source === "anm" && data.anmLayer) {
+            const merged = mergeAnmLayerImport(
+              prev.layers,
+              prev.entities,
+              data.anmLayer,
+              data.entities!,
+            );
+            return { ...prev, layers: merged.layers, entities: merged.entities };
+          }
+          const merged = mergeOverlayImportLegacy(prev.layers, prev.entities, source, data.entities!);
           return { ...prev, layers: merged.layers, entities: merged.entities };
         });
-        setOverlayNotice(t("basemap.importDone", { count: data.entities.length, source: t(`basemap.${source}`) }));
+        const sourceLabel =
+          source === "anm" && data.anmLayer
+            ? t(`basemap.anmLayers.${data.anmLayer}`)
+            : t(`basemap.${source}`);
+        setOverlayNotice(t("basemap.importDone", { count: data.entities.length, source: sourceLabel }));
       } catch {
         setOverlayNotice(t("basemap.importError"));
       } finally {
@@ -378,18 +424,118 @@ export function CadWorkspace({ userId }: { userId: string }) {
     [bounds, visibleEntities, projectGeoref, project.crs, t],
   );
 
+  const handleSicarLookup = useCallback(async () => {
+    const codigo = sicarCodigo.trim();
+    if (!codigo) {
+      setOverlayNotice(t("basemap.sicarCodigoRequired"));
+      return;
+    }
+    setSicarLoading(true);
+    setOverlayNotice(null);
+    setSicarTemas([]);
+    setSicarSelectedTemas(new Set());
+    try {
+      const res = await fetch(`/api/cad-map/sicar?codigo=${encodeURIComponent(codigo)}`);
+      const data = (await res.json()) as {
+        error?: string;
+        temas?: { tema: string; areaTotalTema?: string; hasGeometry: boolean }[];
+      };
+      if (!res.ok || !data.temas?.length) {
+        setOverlayNotice(data.error ?? t("basemap.sicarNotFound"));
+        return;
+      }
+      setSicarTemas(data.temas);
+      setSicarSelectedTemas(
+        new Set(data.temas.filter((row) => row.hasGeometry).map((row) => row.tema)),
+      );
+      setOverlayNotice(t("basemap.sicarLookupOk", { count: data.temas.length }));
+    } catch {
+      setOverlayNotice(t("basemap.sicarError"));
+    } finally {
+      setSicarLoading(false);
+    }
+  }, [sicarCodigo, t]);
+
+  const handleSicarImport = useCallback(async () => {
+    const codigo = sicarCodigo.trim();
+    if (!codigo) {
+      setOverlayNotice(t("basemap.sicarCodigoRequired"));
+      return;
+    }
+    if (!projectGeoref.isGeoreferenced) {
+      setOverlayNotice(t("basemap.needGeoref"));
+      return;
+    }
+    const temas = [...sicarSelectedTemas];
+    if (temas.length === 0) {
+      setOverlayNotice(t("basemap.sicarSelectTema"));
+      return;
+    }
+
+    setImportingOverlay("sicar");
+    setOverlayNotice(null);
+    try {
+      const swapEn = projectGeoref.eastingAxis === "y";
+      const res = await fetch("/api/cad-map/sicar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          codigo,
+          utmZone: projectGeoref.utmZone,
+          swapEn,
+          temas,
+        }),
+      });
+      const data = (await res.json()) as {
+        error?: string;
+        entities?: CadEntity[];
+      };
+      if (!res.ok || !data.entities?.length) {
+        setOverlayNotice(data.error ?? t("basemap.importEmpty"));
+        return;
+      }
+      setProject((prev) => {
+        const merged = mergeOverlayImport(
+          prev.layers,
+          prev.entities,
+          SICAR_CAD_LAYER,
+          data.entities!,
+        );
+        return { ...prev, layers: merged.layers, entities: merged.entities };
+      });
+      setOverlayNotice(
+        t("basemap.importDone", { count: data.entities.length, source: t("basemap.car") }),
+      );
+    } catch {
+      setOverlayNotice(t("basemap.importError"));
+    } finally {
+      setImportingOverlay(null);
+    }
+  }, [sicarCodigo, sicarSelectedTemas, projectGeoref, t]);
+
   useEffect(() => {
     if (!overlayNotice) return;
     const timer = window.setTimeout(() => setOverlayNotice(null), 5000);
     return () => window.clearTimeout(timer);
   }, [overlayNotice]);
 
-  function patchBasemapOverlay(key: keyof CadBasemapOverlays, value: boolean) {
+  function patchBasemapOverlay(key: "satellite" | "car" | "hidro", value: boolean) {
     if (value && !projectGeoref.isGeoreferenced) {
       setOverlayNotice(t("basemap.needGeoref"));
       return;
     }
     setBasemapOverlays((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function patchAnmSigmineOverlay(key: AnmSigmineLayerKey, value: boolean) {
+    if (value && !projectGeoref.isGeoreferenced) {
+      setOverlayNotice(t("basemap.needGeoref"));
+      return;
+    }
+    setBasemapOverlays((prev) => ({
+      ...prev,
+      anmSigmine: { ...prev.anmSigmine, [key]: value },
+    }));
   }
 
   const grid = useMemo(() => gridDataForViewport(viewport), [viewport]);
@@ -749,7 +895,10 @@ export function CadWorkspace({ userId }: { userId: string }) {
         setImported(record.project.entities.length > 0);
         setSelectedId(null);
         setRasters([]);
-        setBasemapOverlays({ satellite: false, car: false, anm: false, hidro: false });
+        setBasemapOverlays({
+          ...DEFAULT_CAD_BASEMAP_OVERLAYS,
+          anmSigmine: { ...DEFAULT_CAD_BASEMAP_OVERLAYS.anmSigmine },
+        });
         resetWorkspaceModes();
         setOpenProjectsPanel(false);
         setActiveTab("desenho");
@@ -800,7 +949,10 @@ export function CadWorkspace({ userId }: { userId: string }) {
       setSelectedId(null);
       setViewBounds(computeViewportBoundsSafe([]));
       setRasters([]);
-      setBasemapOverlays({ satellite: false, car: false, anm: false, hidro: false });
+      setBasemapOverlays({
+        ...DEFAULT_CAD_BASEMAP_OVERLAYS,
+        anmSigmine: { ...DEFAULT_CAD_BASEMAP_OVERLAYS.anmSigmine },
+      });
       setImportNotice(null);
       setImportingPoints(false);
       setImportingRaster(false);
@@ -2020,14 +2172,6 @@ export function CadWorkspace({ userId }: { userId: string }) {
           <label className="flex items-center gap-2 rounded-lg border border-[#d1d5db] px-3 py-2 text-sm">
             <input
               type="checkbox"
-              checked={basemapOverlays.anm}
-              onChange={(e) => patchBasemapOverlay("anm", e.target.checked)}
-            />
-            {t("basemap.anm")}
-          </label>
-          <label className="flex items-center gap-2 rounded-lg border border-[#d1d5db] px-3 py-2 text-sm">
-            <input
-              type="checkbox"
               checked={basemapOverlays.hidro}
               onChange={(e) => patchBasemapOverlay("hidro", e.target.checked)}
             />
@@ -3066,17 +3210,123 @@ export function CadWorkspace({ userId }: { userId: string }) {
             </section>
 
             <section className="rounded-xl border border-[#e5e7eb] bg-white p-4">
+              <h3 className="text-sm font-semibold text-[#0f2848]">{t("basemap.sicarSectionTitle")}</h3>
+              <p className="mt-1 text-xs text-[#6b7280]">{t("basemap.sicarSectionHint")}</p>
+              <div className="mt-3 flex flex-col gap-2">
+                <input
+                  type="text"
+                  value={sicarCodigo}
+                  onChange={(e) => setSicarCodigo(e.target.value.toUpperCase())}
+                  placeholder={t("basemap.sicarCodigoPlaceholder")}
+                  className="w-full rounded-lg border border-[#d1d5db] px-3 py-2 font-mono text-xs"
+                />
+                <button
+                  type="button"
+                  disabled={sicarLoading || importingOverlay !== null}
+                  onClick={() => void handleSicarLookup()}
+                  className="rounded-lg border border-[#22c55e] px-3 py-2 text-xs font-medium text-[#15803d] disabled:opacity-50"
+                >
+                  {sicarLoading ? "…" : t("basemap.sicarLookup")}
+                </button>
+              </div>
+              {sicarTemas.length > 0 ? (
+                <ul className="mt-3 max-h-48 space-y-1 overflow-y-auto text-xs">
+                  {sicarTemas.map((row) => (
+                    <li key={row.tema}>
+                      <label className="flex items-start gap-2 rounded px-1 py-1 hover:bg-[#f9fafb]">
+                        <input
+                          type="checkbox"
+                          className="mt-0.5"
+                          disabled={!row.hasGeometry}
+                          checked={sicarSelectedTemas.has(row.tema)}
+                          onChange={(e) => {
+                            setSicarSelectedTemas((prev) => {
+                              const next = new Set(prev);
+                              if (e.target.checked) next.add(row.tema);
+                              else next.delete(row.tema);
+                              return next;
+                            });
+                          }}
+                        />
+                        <span>
+                          <span className="font-medium">{row.tema}</span>
+                          {row.areaTotalTema ? (
+                            <span className="ml-1 text-[#6b7280]">({row.areaTotalTema} ha)</span>
+                          ) : null}
+                          {!row.hasGeometry ? (
+                            <span className="ml-1 text-[#9ca3af]">— sem polígono</span>
+                          ) : null}
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {sicarTemas.length > 0 ? (
+                <button
+                  type="button"
+                  disabled={importingOverlay !== null || sicarSelectedTemas.size === 0}
+                  onClick={() => void handleSicarImport()}
+                  className="mt-3 w-full rounded-lg bg-[#22c55e] px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
+                >
+                  {importingOverlay === "sicar" ? "…" : t("basemap.sicarImport")}
+                </button>
+              ) : null}
+              <p className="mt-2 text-[10px] text-[#9ca3af]">{t("basemap.sicarApiCredit")}</p>
+            </section>
+
+            <section className="rounded-xl border border-[#e5e7eb] bg-white p-4">
+              <h3 className="text-sm font-semibold text-[#0f2848]">{t("basemap.anmSectionTitle")}</h3>
+              <p className="mt-1 text-xs text-[#6b7280]">{t("basemap.anmSectionHint")}</p>
+              <ul className="mt-3 space-y-2">
+                {ANM_SIGMINE_LAYER_KEYS.map((layerKey) => {
+                  const def = ANM_SIGMINE_LAYERS[layerKey];
+                  const importKey = `anm:${layerKey}`;
+                  return (
+                    <li
+                      key={layerKey}
+                      className="rounded-lg border border-[#f3f4f6] px-3 py-2"
+                    >
+                      <label className="flex items-start gap-2 text-xs">
+                        <input
+                          type="checkbox"
+                          className="mt-0.5"
+                          checked={basemapOverlays.anmSigmine[layerKey]}
+                          onChange={(e) => patchAnmSigmineOverlay(layerKey, e.target.checked)}
+                        />
+                        <span>
+                          <span className="font-medium" style={{ color: def.color }}>
+                            {t(`basemap.anmLayers.${layerKey}`)}
+                          </span>
+                          <span className="mt-0.5 block text-[10px] text-[#9ca3af]">
+                            {t(`basemap.anmLayersHint.${layerKey}`)}
+                          </span>
+                        </span>
+                      </label>
+                      <button
+                        type="button"
+                        disabled={importingOverlay !== null}
+                        onClick={() => void handleImportOverlay("anm", layerKey)}
+                        className="mt-2 w-full rounded border px-2 py-1.5 text-[11px] font-medium disabled:opacity-50"
+                        style={{ borderColor: def.color, color: def.color }}
+                      >
+                        {importingOverlay === importKey
+                          ? "…"
+                          : t("basemap.importAnmLayer", { layer: t(`basemap.anmLayers.${layerKey}`) })}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="mt-2 text-[10px] text-[#9ca3af]">
+                {t("basemap.anmOpenDataCredit")}
+              </p>
+            </section>
+
+            <section className="rounded-xl border border-[#e5e7eb] bg-white p-4">
               <h3 className="text-sm font-semibold text-[#0f2848]">{t("basemap.importTitle")}</h3>
               <p className="mt-1 text-xs text-[#6b7280]">{t("basemap.importHint")}</p>
               <div className="mt-3 flex flex-col gap-2">
-                <button
-                  type="button"
-                  disabled={importingOverlay !== null}
-                  onClick={() => void handleImportOverlay("anm")}
-                  className="rounded-lg border border-[#f97316] px-3 py-2 text-xs font-medium text-[#c2410c] disabled:opacity-50"
-                >
-                  {importingOverlay === "anm" ? "…" : t("basemap.importAnm")}
-                </button>
                 <button
                   type="button"
                   disabled={importingOverlay !== null}

@@ -6,15 +6,16 @@ import {
   parseMapDimensions,
 } from "@/lib/cad-map/fetch-map-image";
 import {
-  ANM_SIGMINE_LAYER_ID,
   ANM_SIGMINE_MAPSERVER,
   ANM_SIGMINE_WMS,
+  parseAnmMapLayerIds,
 } from "@/lib/cad-map/overlay-sources";
 import { isBboxInBrazil } from "@/lib/rtk-validation/cad/map-bbox";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const bbox = parseBbox4326(searchParams.get("bbox"));
+  const layerIds = parseAnmMapLayerIds(searchParams.get("layers"));
   const { width, height } = parseMapDimensions(
     searchParams.get("width"),
     searchParams.get("height"),
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
   try {
     const exportResult = await fetchArcGisExportMap(
       ANM_SIGMINE_MAPSERVER,
-      ANM_SIGMINE_LAYER_ID,
+      layerIds,
       bbox,
       width,
       height,
@@ -49,7 +50,13 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const wmsResult = await fetchArcGisWmsMap(ANM_SIGMINE_WMS, ANM_SIGMINE_LAYER_ID, bbox, width, height);
+    const wmsResult = await fetchArcGisWmsMap(
+      ANM_SIGMINE_WMS,
+      layerIds.join(","),
+      bbox,
+      width,
+      height,
+    );
     if (wmsResult) {
       return new NextResponse(wmsResult.body, {
         headers: {

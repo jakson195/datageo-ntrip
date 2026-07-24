@@ -112,12 +112,14 @@ export async function fetchArcGisWmsMap(
 
 export async function fetchArcGisExportMap(
   mapServerBase: string,
-  layerId: string,
+  layerIds: string | string[],
   bbox: Bbox4326,
   width: number,
   height: number,
 ): Promise<MapImageResult | null> {
   const [minLon, minLat, maxLon, maxLat] = bbox;
+  const ids = (Array.isArray(layerIds) ? layerIds : [layerIds]).filter(Boolean);
+  if (ids.length === 0) return null;
   const url = new URL(`${mapServerBase.replace(/\/$/, "")}/export`);
   url.searchParams.set("bbox", `${minLon},${minLat},${maxLon},${maxLat}`);
   url.searchParams.set("bboxSR", "4326");
@@ -125,7 +127,7 @@ export async function fetchArcGisExportMap(
   url.searchParams.set("size", `${Math.round(width)},${Math.round(height)}`);
   url.searchParams.set("format", "png");
   url.searchParams.set("transparent", "true");
-  url.searchParams.set("layers", `show:${layerId}`);
+  url.searchParams.set("layers", `show:${ids.join(",")}`);
   url.searchParams.set("f", "image");
 
   const upstream = await fetchWithTimeout(url.toString(), {

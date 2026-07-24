@@ -66,17 +66,24 @@ export function carWmsLayerForUf(uf: string): string {
   return `sicar:sicar_imoveis_${uf.toLowerCase()}`;
 }
 
-export const ANM_SIGMINE_MAPSERVER =
-  "https://geo.anm.gov.br/arcgis/rest/services/SIGMINE/dados_anm/MapServer";
-
-export const ANM_SIGMINE_WMS = `${ANM_SIGMINE_MAPSERVER.replace("/rest/", "/")}/WMSServer`;
-
-/** Camada 0 — processos minerários ativos (ANM). */
-export const ANM_SIGMINE_LAYER_ID = "0";
-/** @deprecated use ANM_SIGMINE_LAYER_ID */
-export const ANM_SIGMINE_LAYERS = ANM_SIGMINE_LAYER_ID;
-
-export const ANM_QUERY_LAYER = `${ANM_SIGMINE_MAPSERVER}/0`;
+export {
+  ANM_DADOS_ABERTOS_BASE,
+  ANM_QUERY_LAYER,
+  ANM_SIGMINE_LAYER_ID,
+  ANM_SIGMINE_LAYERS,
+  ANM_SIGMINE_LAYER_KEYS,
+  ANM_SIGMINE_MAPSERVER,
+  ANM_SIGMINE_WMS,
+  activeAnmMapLayerIds,
+  anmQueryLayerUrl,
+  anyAnmSigmineOverlay,
+  DEFAULT_ANM_SIGMINE_OVERLAY,
+  isAnmSigmineLayerKey,
+  parseAnmMapLayerIds,
+  type AnmSigmineLayerDef,
+  type AnmSigmineLayerKey,
+  type AnmSigmineOverlayState,
+} from "./anm-sigmine-layers";
 
 export const HIDRO_BHO_MAPSERVER =
   "https://portal1.snirh.gov.br/server/rest/services/dados_abertos/Hidrografia/MapServer";

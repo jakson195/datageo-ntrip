@@ -19,12 +19,28 @@ import {
   type MapTileRef,
 } from "@/lib/rtk-validation/cad/map-tiles";
 import type { CadEntity } from "@/lib/rtk-validation/cad/types";
+import {
+  activeAnmMapLayerIds,
+  anyAnmSigmineOverlay,
+  DEFAULT_ANM_SIGMINE_OVERLAY,
+  type AnmSigmineLayerKey,
+  type AnmSigmineOverlayState,
+} from "@/lib/cad-map/overlay-sources";
+
+export type { AnmSigmineLayerKey, AnmSigmineOverlayState };
 
 export type CadBasemapOverlays = {
   satellite: boolean;
   car: boolean;
-  anm: boolean;
+  anmSigmine: AnmSigmineOverlayState;
   hidro: boolean;
+};
+
+export const DEFAULT_CAD_BASEMAP_OVERLAYS: CadBasemapOverlays = {
+  satellite: false,
+  car: false,
+  anmSigmine: { ...DEFAULT_ANM_SIGMINE_OVERLAY },
+  hidro: false,
 };
 
 type CadBasemapLayerProps = {
@@ -35,16 +51,17 @@ type CadBasemapLayerProps = {
   georef?: CadGeorefContext;
 };
 
-type OverlayKey = "car" | "anm" | "hidro";
+type OverlayKey = "car" | "hidro";
 
 const OVERLAY_CONFIG: Record<
   OverlayKey,
   { apiPath: string; opacity: number; zIndex: number }
 > = {
   car: { apiPath: "/api/cad-map/car", opacity: 0.92, zIndex: 1 },
-  anm: { apiPath: "/api/cad-map/anm", opacity: 0.88, zIndex: 2 },
-  hidro: { apiPath: "/api/cad-map/hidro", opacity: 0.9, zIndex: 3 },
+  hidro: { apiPath: "/api/cad-map/hidro", opacity: 0.9, zIndex: 4 },
 };
+
+const ANM_OVERLAY = { apiPath: "/api/cad-map/anm", opacity: 0.88, zIndex: 2 };
 
 function rectToPercent(
   rect: { x: number; y: number; width: number; height: number },
@@ -59,8 +76,14 @@ function rectToPercent(
   };
 }
 
-function buildMapUrl(apiPath: string, bboxStr: string, w: number, h: number) {
-  return `${apiPath}?bbox=${encodeURIComponent(bboxStr)}&width=${w}&height=${h}`;
+function buildMapUrl(apiPath: string, bboxStr: string, w: number, h: number, extra?: Record<string, string>) {
+  const params = new URLSearchParams({
+    bbox: bboxStr,
+    width: String(w),
+    height: String(h),
+    ...extra,
+  });
+  return `${apiPath}?${params.toString()}`;
 }
 
 function buildSatelliteTileUrl(tile: MapTileRef) {
@@ -134,25 +157,31 @@ export function CadBasemapLayer({ viewport, entities, overlays, crs, georef: geo
   const t = useTranslations("rtkCad.basemap");
   const [failed, setFailed] = useState<Record<OverlayKey, boolean>>({
     car: false,
-    anm: false,
     hidro: false,
   });
+  const [anmFailed, setAnmFailed] = useState(false);
   const [satelliteFailed, setSatelliteFailed] = useState(false);
 
-  const activeKeys = (Object.keys(overlays) as OverlayKey[]).filter((k) => overlays[k]);
+  const activeKeys = (Object.keys(OVERLAY_CONFIG) as OverlayKey[]).filter((k) => overlays[k]);
+  const anmActive = anyAnmSigmineOverlay(overlays.anmSigmine);
 
   useEffect(() => {
-    if (activeKeys.length === 0 && !overlays.satellite) return;
+    if (activeKeys.length === 0 && !anmActive && !overlays.satellite) return;
     setFailed((prev) => {
       const next = { ...prev };
       for (const key of activeKeys) next[key] = false;
       return next;
     });
+    if (anmActive) setAnmFailed(false);
     if (overlays.satellite) setSatelliteFailed(false);
   }, [
     overlays.car,
-    overlays.anm,
     overlays.hidro,
+    overlays.anmSigmine.processos,
+    overlays.anmSigmine.protecaoFonte,
+    overlays.anmSigmine.arrendamentos,
+    overlays.anmSigmine.bloqueio,
+    overlays.anmSigmine.reservasGarimpeiras,
     overlays.satellite,
     viewport.minX,
     viewport.maxX,
@@ -176,9 +205,14 @@ export function CadBasemapLayer({ viewport, entities, overlays, crs, georef: geo
       .map((n) => n.toFixed(6))
       .join(",");
 
+    const anmLayerIds = activeAnmMapLayerIds(overlays.anmSigmine);
+
     return {
       car: overlays.car ? buildMapUrl(OVERLAY_CONFIG.car.apiPath, bboxStr, w, h) : null,
-      anm: overlays.anm ? buildMapUrl(OVERLAY_CONFIG.anm.apiPath, bboxStr, w, h) : null,
+      anm:
+        anmLayerIds.length > 0
+          ? buildMapUrl(ANM_OVERLAY.apiPath, bboxStr, w, h, { layers: anmLayerIds.join(",") })
+          : null,
       hidro: overlays.hidro ? buildMapUrl(OVERLAY_CONFIG.hidro.apiPath, bboxStr, w, h) : null,
     };
   }, [overlays, viewport, georef, entities]);
@@ -204,7 +238,7 @@ export function CadBasemapLayer({ viewport, entities, overlays, crs, georef: geo
       );
   }, [overlays.satellite, viewport, georef]);
 
-  if (!overlays.car && !overlays.anm && !overlays.hidro && !overlays.satellite) return null;
+  if (!overlays.car && !anmActive && !overlays.hidro && !overlays.satellite) return null;
 
   const viewW = viewport.width;
   const viewH = viewport.height;
@@ -263,6 +297,16 @@ export function CadBasemapLayer({ viewport, entities, overlays, crs, georef: geo
         );
       })}
 
+      {anmActive && mapUrls.anm && !anmFailed && georef.isGeoreferenced ? (
+        <WmsOverlayImage
+          key="anm-sigmine"
+          url={mapUrls.anm}
+          style={{ ...wmsStyle, zIndex: ANM_OVERLAY.zIndex }}
+          opacity={ANM_OVERLAY.opacity}
+          onFailed={() => setAnmFailed(true)}
+        />
+      ) : null}
+
       {(Object.keys(OVERLAY_CONFIG) as OverlayKey[]).map((key) => {
         if (!overlays[key] || !failed[key]) return null;
         return (
@@ -271,8 +315,8 @@ export function CadBasemapLayer({ viewport, entities, overlays, crs, georef: geo
             className="absolute rounded bg-amber-600/90 px-2 py-1 text-[10px] text-white"
             style={{
               pointerEvents: "none",
-              left: key === "car" ? 8 : key === "anm" ? 8 : 8,
-              top: key === "car" ? 8 : key === "anm" ? 28 : 48,
+              left: 8,
+              top: key === "car" ? 8 : 48,
               zIndex: 20,
             }}
           >
@@ -280,6 +324,15 @@ export function CadBasemapLayer({ viewport, entities, overlays, crs, georef: geo
           </div>
         );
       })}
+
+      {anmActive && anmFailed ? (
+        <div
+          className="absolute left-2 top-7 z-20 rounded bg-amber-600/90 px-2 py-1 text-[10px] text-white"
+          style={{ pointerEvents: "none" }}
+        >
+          {t("anmUnavailable")}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -289,7 +342,7 @@ export function CadBasemapAttribution({ overlays }: { overlays: CadBasemapOverla
   const labels: string[] = [];
   if (overlays.satellite) labels.push(t("satelliteCredit"));
   if (overlays.car) labels.push(t("carCredit"));
-  if (overlays.anm) labels.push(t("anmCredit"));
+  if (anyAnmSigmineOverlay(overlays.anmSigmine)) labels.push(t("anmCredit"));
   if (overlays.hidro) labels.push(t("hidroCredit"));
   if (labels.length === 0) return null;
 
