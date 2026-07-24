@@ -688,7 +688,10 @@
       "finishPolyline": "Finalizar polilinha",
       "closePolygon": "Fechar polígono",
       "closeSelected": "Fechar polígono selecionado",
-      "insertCoords": "Inserir coordenadas"
+      "insertCoords": "Inserir coordenadas",
+      "hideCoords": "Ocultar coordenadas",
+      "coordsHidden": "Etiquetas de coordenadas ocultas.",
+      "coordsShown": "Etiquetas de coordenadas visíveis."
     },
     "layers": {
       "title": "Camadas",
@@ -719,17 +722,31 @@
     "hints": {
       "zoomPan": "Scroll do mouse = zoom · Ferramenta Pan = arrastar · Comandos CAD = zoom"
     },
+    "view3d": {
+      "plan": "Planta 2D",
+      "scene": "Vista 3D",
+      "hint": "Arraste = girar · Scroll = zoom · Botão direito = pan",
+      "terrainOn": "Superfície do terreno",
+      "terrainOff": "Sem terreno (pontos com cota Z)",
+      "elements": "{count} elementos",
+      "loading": "Carregando vista 3D…",
+      "statusHint": "Vista 3D — use o mouse para orbitar o modelo",
+      "empty": "Nenhum elemento visível para exibir em 3D. Importe pontos RTK ou desenhe geometrias.",
+      "webglError": "Não foi possível iniciar a visualização 3D (WebGL)."
+    },
     "sidebar": {
       "draw": "Desenho",
       "layers": "Camadas",
+      "properties": "Propriedades",
       "contour": "Curvas de nível",
       "tin": "Triangulação",
       "hypsometric": "Mapa hipsométrico",
-      "profile": "Perfil do terreno"
+      "profile": "Perfil do terreno",
+      "anm": "ANM SIGMINE"
     },
     "observations": {
       "title": "Observações em pontos",
-      "hint": "Pontos do levantamento RTK e de controle. Clique para selecionar no desenho.",
+      "hint": "Pontos do levantamento RTK e de controle. Clique para selecionar no desenho; edite E, N, Z ou nome para atualizar o CAD.",
       "count": "{count} pontos",
       "point": "Ponto",
       "layer": "Camada"
@@ -740,7 +757,6 @@
     },
     "basemap": {
       "satellite": "Satélite (Google Earth)",
-      "car": "Dados CAR (SICAR)",
       "anm": "ANM SIGMINE",
       "anmSectionTitle": "ANM SIGMINE — processos minerários",
       "anmSectionHint": "Camadas oficiais da Agência Nacional de Mineração (dadosabertos.anm.gov.br). Marque para exibir no mapa ou importe vetores na área visível.",
@@ -760,38 +776,21 @@
         "reservasGarimpeiras": "Reservas garimpeiras estabelecidas pela ANM."
       },
       "importAnmLayer": "Importar {layer}",
-      "hidro": "Cursos d'água (ANA)",
       "satelliteHint": "Imagens de satélite via Esri World Imagery.",
       "satelliteCredit": "Imagery © Google / Esri",
       "satelliteUnavailable": "Satélite indisponível nesta área",
-      "carHint": "Perímetros de imóveis rurais via WMS oficial SICAR/MMA.",
       "anmHint": "Processos e camadas SIGMINE — REST/WMS oficial ANM (atualização diária).",
-      "hidroHint": "Rede hidrográfica (BHO) — ANA/SNIRH.",
-      "carCredit": "CAR/SICAR (MMA)",
       "anmCredit": "ANM/SIGMINE",
-      "hidroCredit": "ANA/SNIRH",
-      "carUnavailable": "CAR indisponível nesta área",
-      "sicarSectionTitle": "SICAR — consulta por código do imóvel",
-      "sicarSectionHint": "API ConectaGov/SERPRO: informe o código CAR (ex.: BA-176934-20170113-…) para importar temas e polígonos.",
-      "sicarCodigoPlaceholder": "UF-000000-YYYYMMDD-HASH",
-      "sicarCodigoRequired": "Informe o código do imóvel CAR.",
-      "sicarLookup": "Consultar SICAR",
-      "sicarImport": "Importar temas selecionados",
-      "sicarLookupOk": "{count} temas encontrados — selecione os polígonos para importar.",
-      "sicarNotFound": "Imóvel não encontrado ou API SICAR indisponível.",
-      "sicarSelectTema": "Selecione ao menos um tema com polígono.",
-      "sicarError": "Falha ao consultar API SICAR.",
-      "sicarApiCredit": "Fonte: API SICAR Temas do Imóvel · ConectaGov/SERPRO (car.gov.br)",
-      "anmUnavailable": "ANM indisponível nesta área",
-      "hidroUnavailable": "Hidrografia indisponível nesta área",
+      "anmUnavailable": "ANM indisponível — verifique a conexão ou tente novamente.",
+      "anmEmpty": "Sem processos minerários nesta área — aproxime o zoom ou use Enquadrar nos pontos RTK.",
+      "anmOutOfBrazil": "Área fora do Brasil ou zoom muito distante — use Enquadrar nos pontos RTK.",
       "importTitle": "Importar dados oficiais",
       "importHint": "Importa vetores da área visível do mapa para camadas bloqueadas.",
-      "importHidro": "Importar cursos d'água (área visível)",
       "importDone": "{count} geometrias importadas — {source}",
       "importEmpty": "Nenhum dado encontrado na área visível.",
       "importTooLarge": "Área muito grande — aproxime o zoom antes de importar.",
       "importError": "Falha ao importar dados geoespaciais.",
-      "needGeoref": "Importe pontos RTK (UTM ou lat/lon) e clique em Enquadrar antes de usar CAR/ANM/satélite."
+      "needGeoref": "Importe pontos RTK (UTM ou lat/lon) e clique em Enquadrar antes de usar ANM/satélite."
     },
     "polygon": {
       "defaultName": "Polígono",
@@ -832,7 +831,7 @@
     },
     "import": {
       "title": "Importar dados",
-      "hint": "Pontos de levantamento (TXT, CSV ou Excel) ou ortofoto georreferenciada.",
+      "hint": "Pontos de levantamento (TXT, CSV ou Excel).",
       "pointsFile": "Importar pontos TXT / CSV",
       "excel": "Importar pontos Excel (.xlsx)",
       "excelHint": "Colunas: Código, Descrição, E (Este), N (Norte), Z (Cota). A primeira aba da planilha é usada.",
@@ -958,7 +957,15 @@
     },
     "commands": {
       "title": "Comandos CAD",
-      "hint": "Ações rápidas — não precisa de OpenAI.",
+      "hint": "Clique em um comando para abrir e preencher os dados.",
+      "tabs": {
+        "createPoint": "Inserir ponto por coordenadas",
+        "point": "Operações em pontos",
+        "distance": "Distância entre pontos",
+        "area": "Calcular área",
+        "profile": "Perfil do terreno",
+        "quick": "Comandos rápidos"
+      },
       "zoomOps": {
         "title": "Zoom",
         "hint": "Use scroll do mouse no desenho ou os botões abaixo.",

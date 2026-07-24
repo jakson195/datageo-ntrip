@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
@@ -61,8 +62,6 @@ import {
   TIN_LAYER,
   generateHypsometricRaster,
   importSurveyPointsToProject,
-  parseGeoTiffBuffer,
-  parseImageFileToRasterOverlay,
   detectCadGeorefFromProject,
   ensureRasterLayerInProject,
   removeRasterLayerFromProject,
@@ -83,6 +82,7 @@ import type { MemorialFormDefaults, MemorialKind, SavedCadProjectRecord } from "
 import type {
   CadEntity,
   CadLayer,
+  CadPointEntity,
   CadPolylineEntity,
   CadProject,
   CadRasterOverlay,
@@ -106,9 +106,22 @@ import { CadPointObservations } from "@/components/rtk-validation/cad-point-obse
 import { CadToolsSidebar, type CadToolsTab } from "@/components/rtk-validation/cad-tools-sidebar";
 import { CadSvgMultilineText } from "@/components/rtk-validation/cad-svg-multiline-text";
 import { CadProfileView } from "@/components/rtk-validation/cad-profile-view";
+
+const Cad3dView = dynamic(
+  () => import("@/components/rtk-validation/cad-3d-view").then((m) => m.Cad3dView),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex min-h-[560px] items-center justify-center bg-[#0b1220] text-sm text-[#94a3b8]">
+        Carregando vista 3D…
+      </div>
+    ),
+  },
+);
 import type { CadAiSideEffect } from "@/lib/rtk-validation/cad/ai-command-types";
 import { executeCadAiCommand } from "@/lib/rtk-validation/cad/ai-command-executor";
 import { isTerrainProfileLayer } from "@/lib/rtk-validation/cad/profile";
+import { ORTHOPHOTO_LAYER } from "@/lib/rtk-validation/cad/raster-layers";
 import { isViewportSmallEnoughForImport } from "@/lib/rtk-validation/cad/map-tiles";
 import { viewportBbox4326Georef } from "@/lib/rtk-validation/cad/georef";
 import {
@@ -117,9 +130,6 @@ import {
 } from "@/lib/cad-map/overlay-sources";
 import {
   mergeAnmLayerImport,
-  mergeOverlayImport,
-  mergeOverlayImportLegacy,
-  SICAR_CAD_LAYER,
   type OverlayImportSource,
 } from "@/lib/rtk-validation/cad/import-map-overlay";
 import { anyAnmSigmineOverlay } from "@/lib/cad-map/anm-sigmine-layers";
@@ -157,12 +167,14 @@ const MAX_VIEW_SPAN_M = 50_000_000;
 
 export function CadWorkspace({ userId }: { userId: string }) {
   const t = useTranslations("rtkCad");
+  const t3d = useTranslations("rtkCad.view3d");
   const router = useRouter();
   const svgRef = useRef<SVGSVGElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [project, setProject] = useState<CadProject>(() => emptyProject("Projeto CAD"));
   const [activeLayerId, setActiveLayerId] = useState("draw");
   const [tool, setTool] = useState<CadTool>("select");
+  const [viewMode, setViewMode] = useState<"plan" | "3d">("plan");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [viewBounds, setViewBounds] = useState<ViewBounds | null>(null);
   const [draft, setDraft] = useState<CadVertex[]>([]);
@@ -170,6 +182,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
   const [cursor, setCursor] = useState<{ x: number; y: number; z: number } | null>(null);
   const [imported, setImported] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
+  const [coordLabelsVisible, setCoordLabelsVisible] = useState(false);
   const [memorialForm, setMemorialForm] = useState<MemorialFormDefaults>(() => defaultMemorialForm());
   const [memorialFooterOpen, setMemorialFooterOpen] = useState(true);
   const [generatingMemorial, setGeneratingMemorial] = useState(false);
@@ -187,12 +200,10 @@ export function CadWorkspace({ userId }: { userId: string }) {
   const [hypsometricError, setHypsometricError] = useState<string | null>(null);
   const [importNotice, setImportNotice] = useState<string | null>(null);
   const [importingPoints, setImportingPoints] = useState(false);
-  const [importingRaster, setImportingRaster] = useState(false);
   const [pointEditZ, setPointEditZ] = useState("");
   const [pointActionNotice, setPointActionNotice] = useState<string | null>(null);
   const surveyFileRef = useRef<HTMLInputElement>(null);
   const excelFileRef = useRef<HTMLInputElement>(null);
-  const orthoFileRef = useRef<HTMLInputElement>(null);
   const [hoverSnapId, setHoverSnapId] = useState<string | null>(null);
   const [drawHint, setDrawHint] = useState<string | null>(null);
   const [pointSearch, setPointSearch] = useState("");
@@ -209,12 +220,6 @@ export function CadWorkspace({ userId }: { userId: string }) {
   }));
   const [importingOverlay, setImportingOverlay] = useState<string | null>(null);
   const [overlayNotice, setOverlayNotice] = useState<string | null>(null);
-  const [sicarCodigo, setSicarCodigo] = useState("");
-  const [sicarTemas, setSicarTemas] = useState<
-    { tema: string; areaTotalTema?: string; hasGeometry: boolean }[]
-  >([]);
-  const [sicarSelectedTemas, setSicarSelectedTemas] = useState<Set<string>>(new Set());
-  const [sicarLoading, setSicarLoading] = useState(false);
   const [savedProjectId, setSavedProjectId] = useState<string | null>(null);
   const [savedProjects, setSavedProjects] = useState<SavedCadProjectRecord[]>([]);
   const [openProjectsPanel, setOpenProjectsPanel] = useState(false);
@@ -291,10 +296,16 @@ export function CadWorkspace({ userId }: { userId: string }) {
     () =>
       project.entities.filter((e) => {
         if (isTerrainProfileLayer(e.layerId)) return false;
+        if (!coordLabelsVisible && e.type === "point" && isCoordLabelEntity(e)) return false;
         const layer = project.layers.find((l) => l.id === e.layerId);
         return layer?.visible !== false;
       }),
-    [project.entities, project.layers],
+    [project.entities, project.layers, coordLabelsVisible],
+  );
+
+  const hasTinLayer = useMemo(
+    () => project.entities.some((e) => e.layerId === "tin"),
+    [project.entities],
   );
 
   const layerMap = useMemo(
@@ -321,8 +332,14 @@ export function CadWorkspace({ userId }: { userId: string }) {
   }
 
   const displayRasters = useMemo(
-    () => rastersWithLayerVisibility(rasters, project.layers),
+    () =>
+      rastersWithLayerVisibility(rasters, project.layers).filter((r) => r.kind !== "orthophoto"),
     [rasters, project.layers],
+  );
+
+  const visibleCadLayers = useMemo(
+    () => normalizeCadLayers(project.layers).filter((l) => l.id !== ORTHOPHOTO_LAYER.id),
+    [project.layers],
   );
 
   const bounds = viewBounds ?? computeViewportBoundsSafe(visibleEntities);
@@ -334,9 +351,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
 
   const hasBasemap =
     basemapOverlays.satellite ||
-    basemapOverlays.car ||
-    anyAnmSigmineOverlay(basemapOverlays.anmSigmine) ||
-    basemapOverlays.hidro;
+    anyAnmSigmineOverlay(basemapOverlays.anmSigmine);
   const hasUnderlay = hasBasemap || displayRasters.some((r) => r.visible);
 
   const projectGeoref = useMemo(
@@ -398,22 +413,18 @@ export function CadWorkspace({ userId }: { userId: string }) {
           return;
         }
         setProject((prev) => {
-          if (source === "anm" && data.anmLayer) {
-            const merged = mergeAnmLayerImport(
-              prev.layers,
-              prev.entities,
-              data.anmLayer,
-              data.entities!,
-            );
-            return { ...prev, layers: merged.layers, entities: merged.entities };
-          }
-          const merged = mergeOverlayImportLegacy(prev.layers, prev.entities, source, data.entities!);
+          if (!data.anmLayer) return prev;
+          const merged = mergeAnmLayerImport(
+            prev.layers,
+            prev.entities,
+            data.anmLayer,
+            data.entities!,
+          );
           return { ...prev, layers: merged.layers, entities: merged.entities };
         });
-        const sourceLabel =
-          source === "anm" && data.anmLayer
-            ? t(`basemap.anmLayers.${data.anmLayer}`)
-            : t(`basemap.${source}`);
+        const sourceLabel = data.anmLayer
+          ? t(`basemap.anmLayers.${data.anmLayer}`)
+          : t("basemap.anm");
         setOverlayNotice(t("basemap.importDone", { count: data.entities.length, source: sourceLabel }));
       } catch {
         setOverlayNotice(t("basemap.importError"));
@@ -424,102 +435,13 @@ export function CadWorkspace({ userId }: { userId: string }) {
     [bounds, visibleEntities, projectGeoref, project.crs, t],
   );
 
-  const handleSicarLookup = useCallback(async () => {
-    const codigo = sicarCodigo.trim();
-    if (!codigo) {
-      setOverlayNotice(t("basemap.sicarCodigoRequired"));
-      return;
-    }
-    setSicarLoading(true);
-    setOverlayNotice(null);
-    setSicarTemas([]);
-    setSicarSelectedTemas(new Set());
-    try {
-      const res = await fetch(`/api/cad-map/sicar?codigo=${encodeURIComponent(codigo)}`);
-      const data = (await res.json()) as {
-        error?: string;
-        temas?: { tema: string; areaTotalTema?: string; hasGeometry: boolean }[];
-      };
-      if (!res.ok || !data.temas?.length) {
-        setOverlayNotice(data.error ?? t("basemap.sicarNotFound"));
-        return;
-      }
-      setSicarTemas(data.temas);
-      setSicarSelectedTemas(
-        new Set(data.temas.filter((row) => row.hasGeometry).map((row) => row.tema)),
-      );
-      setOverlayNotice(t("basemap.sicarLookupOk", { count: data.temas.length }));
-    } catch {
-      setOverlayNotice(t("basemap.sicarError"));
-    } finally {
-      setSicarLoading(false);
-    }
-  }, [sicarCodigo, t]);
-
-  const handleSicarImport = useCallback(async () => {
-    const codigo = sicarCodigo.trim();
-    if (!codigo) {
-      setOverlayNotice(t("basemap.sicarCodigoRequired"));
-      return;
-    }
-    if (!projectGeoref.isGeoreferenced) {
-      setOverlayNotice(t("basemap.needGeoref"));
-      return;
-    }
-    const temas = [...sicarSelectedTemas];
-    if (temas.length === 0) {
-      setOverlayNotice(t("basemap.sicarSelectTema"));
-      return;
-    }
-
-    setImportingOverlay("sicar");
-    setOverlayNotice(null);
-    try {
-      const swapEn = projectGeoref.eastingAxis === "y";
-      const res = await fetch("/api/cad-map/sicar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          codigo,
-          utmZone: projectGeoref.utmZone,
-          swapEn,
-          temas,
-        }),
-      });
-      const data = (await res.json()) as {
-        error?: string;
-        entities?: CadEntity[];
-      };
-      if (!res.ok || !data.entities?.length) {
-        setOverlayNotice(data.error ?? t("basemap.importEmpty"));
-        return;
-      }
-      setProject((prev) => {
-        const merged = mergeOverlayImport(
-          prev.layers,
-          prev.entities,
-          SICAR_CAD_LAYER,
-          data.entities!,
-        );
-        return { ...prev, layers: merged.layers, entities: merged.entities };
-      });
-      setOverlayNotice(
-        t("basemap.importDone", { count: data.entities.length, source: t("basemap.car") }),
-      );
-    } catch {
-      setOverlayNotice(t("basemap.importError"));
-    } finally {
-      setImportingOverlay(null);
-    }
-  }, [sicarCodigo, sicarSelectedTemas, projectGeoref, t]);
-
   useEffect(() => {
     if (!overlayNotice) return;
     const timer = window.setTimeout(() => setOverlayNotice(null), 5000);
     return () => window.clearTimeout(timer);
   }, [overlayNotice]);
 
-  function patchBasemapOverlay(key: "satellite" | "car" | "hidro", value: boolean) {
+  function patchBasemapOverlay(key: "satellite", value: boolean) {
     if (value && !projectGeoref.isGeoreferenced) {
       setOverlayNotice(t("basemap.needGeoref"));
       return;
@@ -1126,13 +1048,17 @@ export function CadWorkspace({ userId }: { userId: string }) {
     }));
   }
 
-  function updatePointLabel(id: string, label: string) {
+  function updatePoint(id: string, patch: Partial<Pick<CadPointEntity, "label" | "x" | "y" | "z">>) {
     setProject((prev) => ({
       ...prev,
       entities: prev.entities.map((e) =>
-        e.id === id && e.type === "point" ? { ...e, label: label.trim() || e.label } : e,
+        e.id === id && e.type === "point" ? { ...e, ...patch } : e,
       ),
     }));
+  }
+
+  function updatePointLabel(id: string, label: string) {
+    updatePoint(id, { label: label.trim() || undefined });
   }
 
   function updatePointZ(id: string, zText: string) {
@@ -1141,10 +1067,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
       setPointActionNotice(t("point.invalidElevation"));
       return;
     }
-    setProject((prev) => ({
-      ...prev,
-      entities: prev.entities.map((e) => (e.id === id && e.type === "point" ? { ...e, z } : e)),
-    }));
+    updatePoint(id, { z });
     setPointActionNotice(t("point.elevationSaved", { z: z.toFixed(3) }));
   }
 
@@ -1571,8 +1494,24 @@ export function CadWorkspace({ userId }: { userId: string }) {
     [handleExportCad],
   );
 
-  const insertCoordinates = useCallback(() => {
+  const toggleCoordLabels = useCallback(() => {
     setPointActionNotice(null);
+
+    if (coordLabelsVisible) {
+      setCoordLabelsVisible(false);
+      setPointActionNotice(t("tools.coordsHidden"));
+      return;
+    }
+
+    const hasLabels = project.entities.some(
+      (e) => e.type === "point" && isCoordLabelEntity(e),
+    );
+    if (hasLabels) {
+      setCoordLabelsVisible(true);
+      setPointActionNotice(t("tools.coordsShown"));
+      return;
+    }
+
     try {
       const result = executeCadAiCommand(
         project,
@@ -1588,11 +1527,12 @@ export function CadWorkspace({ userId }: { userId: string }) {
       for (const effect of result.sideEffects ?? []) {
         handleAiSideEffect(effect);
       }
+      setCoordLabelsVisible(true);
       setPointActionNotice(result.message);
     } catch (err) {
       setPointActionNotice(err instanceof Error ? err.message : t("commands.error"));
     }
-  }, [project, selectedId, memorialForm, handleAiSideEffect, t]);
+  }, [coordLabelsVisible, project, selectedId, memorialForm, handleAiSideEffect, t]);
 
   function generateContours() {
     setContourError(null);
@@ -1763,44 +1703,6 @@ export function CadWorkspace({ userId }: { userId: string }) {
     window.requestAnimationFrame(() => excelFileRef.current?.click());
   }
 
-  async function handleImportOrthophoto(file: File) {
-    setImportNotice(null);
-    setImportingRaster(true);
-    try {
-      const lower = file.name.toLowerCase();
-      if (lower.endsWith(".ecw")) {
-        setImportNotice(t("import.ecwUnsupported"));
-        return;
-      }
-
-      const placementBounds = viewBounds ?? bounds;
-      const georef = detectCadGeorefFromProject(project, placementBounds);
-      let raster: CadRasterOverlay;
-
-      if (lower.endsWith(".tif") || lower.endsWith(".tiff")) {
-        const buffer = await file.arrayBuffer();
-        raster = await parseGeoTiffBuffer(buffer, file.name, georef);
-      } else if (/\.(jpe?g|png|webp)$/i.test(lower)) {
-        if (!georef.isGeoreferenced) {
-          setImportNotice(t("import.needGeoref"));
-          return;
-        }
-        raster = await parseImageFileToRasterOverlay(file, placementBounds);
-      } else {
-        setImportNotice(t("import.orthoFormat"));
-        return;
-      }
-
-      setRasters((prev) => [...prev.filter((r) => r.kind !== "orthophoto"), raster]);
-      setProject((prev) => ensureRasterLayerInProject(prev, "orthophoto"));
-      setImportNotice(t("import.orthoOk", { name: file.name }));
-    } catch (err) {
-      setImportNotice(err instanceof Error ? err.message : t("import.error"));
-    } finally {
-      setImportingRaster(false);
-    }
-  }
-
   function toViewBoxCoords(clientX: number, clientY: number) {
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect) return { sx: width / 2, sy: height / 2 };
@@ -1851,7 +1753,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
 
   useEffect(() => {
     const el = canvasContainerRef.current;
-    if (!el) return;
+    if (!el || viewMode === "3d") return;
     const handler = (e: WheelEvent) => {
       e.preventDefault();
       e.stopPropagation();
@@ -1860,7 +1762,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
     };
     el.addEventListener("wheel", handler, { passive: false });
     return () => el.removeEventListener("wheel", handler);
-  }, []);
+  }, [viewMode]);
 
   function renderCoordinateGrid() {
     if (!showGrid) return null;
@@ -2090,6 +1992,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
         layers={project.layers}
         selectedId={selectedId}
         onSelect={setSelectedId}
+        onUpdatePoint={updatePoint}
       />
       <div className="cad-interface flex flex-col gap-3 rounded-xl border border-[#e5e7eb] bg-white p-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 flex-1">
@@ -2160,22 +2063,6 @@ export function CadWorkspace({ userId }: { userId: string }) {
               onChange={(e) => patchBasemapOverlay("satellite", e.target.checked)}
             />
             {t("basemap.satellite")}
-          </label>
-          <label className="flex items-center gap-2 rounded-lg border border-[#d1d5db] px-3 py-2 text-sm">
-            <input
-              type="checkbox"
-              checked={basemapOverlays.car}
-              onChange={(e) => patchBasemapOverlay("car", e.target.checked)}
-            />
-            {t("basemap.car")}
-          </label>
-          <label className="flex items-center gap-2 rounded-lg border border-[#d1d5db] px-3 py-2 text-sm">
-            <input
-              type="checkbox"
-              checked={basemapOverlays.hidro}
-              onChange={(e) => patchBasemapOverlay("hidro", e.target.checked)}
-            />
-            {t("basemap.hidro")}
           </label>
           <button
             type="button"
@@ -2332,7 +2219,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
           project={project}
           memorialForm={memorialForm}
           selectedPolyline={selectedPolyline}
-          rasters={rasters}
+          rasters={displayRasters}
         />
       ) : null}
 
@@ -2396,7 +2283,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
                     <div className="mt-3 flex flex-col gap-2">
                       <button
                         type="button"
-                        disabled={importingPoints || importingRaster}
+                        disabled={importingPoints}
                         onClick={openSurveyImport}
                         className="rounded-lg border border-[#38bdf8] px-3 py-2 text-xs font-medium text-[#0369a1] hover:bg-[#f0f9ff] disabled:opacity-50"
                       >
@@ -2404,21 +2291,14 @@ export function CadWorkspace({ userId }: { userId: string }) {
                       </button>
                       <button
                         type="button"
-                        disabled={importingPoints || importingRaster}
+                        disabled={importingPoints}
                         onClick={openExcelImport}
                         className="rounded-lg border border-[#0f2848] px-3 py-2 text-xs font-medium text-[#0f2848] hover:bg-[#f0f4f8] disabled:opacity-50"
                       >
                         {importingPoints ? t("import.working") : t("import.excel")}
                       </button>
-                      <button
-                        type="button"
-                        disabled={importingRaster || importingPoints}
-                        onClick={() => window.requestAnimationFrame(() => orthoFileRef.current?.click())}
-                        className="rounded-lg border border-[#16a34a] px-3 py-2 text-xs font-medium text-[#15803d] hover:bg-[#f0fdf4] disabled:opacity-50"
-                      >
-                        {importingRaster ? t("import.working") : t("import.orthophoto")}
-                      </button>
                     </div>
+                    <p className="mt-2 text-[10px] text-[#9ca3af]">{t("import.excelHint")}</p>
                   </section>
                   <section>
                     <h3 className="text-sm font-semibold text-[#0f2848]">{t("draw.optionsTitle")}</h3>
@@ -2536,7 +2416,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
               ),
               layers: (
                 <CadLayersPanel
-                  layers={normalizeCadLayers(project.layers)}
+                  layers={visibleCadLayers}
                   activeLayerId={activeLayerId}
                   entityCounts={layerEntityCounts}
                   onToggleVisibility={toggleLayer}
@@ -2545,6 +2425,227 @@ export function CadWorkspace({ userId }: { userId: string }) {
                   onUpdateLayer={updateLayerStyles}
                   onDeleteLayer={deleteLayer}
                 />
+              ),
+              properties: (
+                <section>
+                  <h3 className="text-sm font-semibold text-[#0f2848]">{t("properties.title")}</h3>
+                  {selectedEntity ? (
+                    <dl className="mt-3 space-y-2 text-xs">
+                      <div>
+                        <dt className="text-[#6b7280]">Tipo</dt>
+                        <dd className="font-medium">{selectedEntity.type}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-[#6b7280]">{t("layers.entityLayer")}</dt>
+                        <dd>
+                          <select
+                            value={selectedEntity.layerId}
+                            onChange={(e) => moveEntityToLayer(selectedEntity.id, e.target.value)}
+                            className="mt-0.5 w-full rounded border border-[#d1d5db] px-2 py-1 font-mono text-xs"
+                          >
+                            {project.layers.map((layer) => (
+                              <option key={layer.id} value={layer.id}>
+                                {layer.name}
+                              </option>
+                            ))}
+                          </select>
+                        </dd>
+                      </div>
+                      {selectedEntity.type === "point" ? (
+                        <>
+                          <div>
+                            <dt className="text-[#6b7280]">{t("point.label")}</dt>
+                            <dd>
+                              <input
+                                type="text"
+                                value={selectedEntity.label ?? ""}
+                                onChange={(e) => updatePointLabel(selectedEntity.id, e.target.value)}
+                                className="mt-0.5 w-full rounded border border-[#d1d5db] px-2 py-1 font-mono text-xs"
+                              />
+                            </dd>
+                          </div>
+                          <div><dt className="text-[#6b7280]">E</dt><dd className="font-mono">
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              defaultValue={selectedEntity.x.toFixed(4)}
+                              key={`${selectedEntity.id}-e`}
+                              onBlur={(e) => {
+                                const x = Number(e.target.value.replace(",", "."));
+                                if (Number.isFinite(x)) updatePoint(selectedEntity.id, { x });
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") e.currentTarget.blur();
+                              }}
+                              className="mt-0.5 w-full rounded border border-[#d1d5db] px-2 py-1 font-mono text-xs"
+                            />
+                          </dd></div>
+                          <div><dt className="text-[#6b7280]">N</dt><dd className="font-mono">
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              defaultValue={selectedEntity.y.toFixed(4)}
+                              key={`${selectedEntity.id}-n`}
+                              onBlur={(e) => {
+                                const y = Number(e.target.value.replace(",", "."));
+                                if (Number.isFinite(y)) updatePoint(selectedEntity.id, { y });
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") e.currentTarget.blur();
+                              }}
+                              className="mt-0.5 w-full rounded border border-[#d1d5db] px-2 py-1 font-mono text-xs"
+                            />
+                          </dd></div>
+                          <div>
+                            <dt className="text-[#6b7280]">Z ({t("point.elevation")})</dt>
+                            <dd className="space-y-1.5">
+                              <input
+                                type="text"
+                                inputMode="decimal"
+                                value={pointEditZ}
+                                onChange={(e) => setPointEditZ(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") applySelectedPointElevation();
+                                }}
+                                className="mt-0.5 w-full rounded border border-[#d1d5db] px-2 py-1 font-mono text-xs"
+                              />
+                              <button
+                                type="button"
+                                onClick={applySelectedPointElevation}
+                                className="w-full rounded-lg bg-[#0f2848] px-2 py-1.5 text-xs font-medium text-white"
+                              >
+                                {t("point.applyElevation")}
+                              </button>
+                            </dd>
+                          </div>
+                          <div className="pt-2">
+                            <button
+                              type="button"
+                              onClick={() => deleteSelectedEntity()}
+                              className="w-full rounded-lg border border-red-300 bg-red-50 px-2 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100"
+                            >
+                              {t("point.delete")}
+                            </button>
+                            {selectedEntity.locked ? (
+                              <p className="mt-1 text-[10px] text-amber-700">{t("point.deleteLockedHint")}</p>
+                            ) : null}
+                          </div>
+                          {pointActionNotice ? (
+                            <p
+                              className={`text-xs ${
+                                pointActionNotice.includes("válida") || pointActionNotice.includes("bloqueado")
+                                  ? "text-amber-700"
+                                  : "text-emerald-700"
+                              }`}
+                            >
+                              {pointActionNotice}
+                            </p>
+                          ) : null}
+                        </>
+                      ) : null}
+                      {selectedPolyline ? (
+                        <>
+                          <div>
+                            <dt className="text-[#6b7280]">{t("polygon.name")}</dt>
+                            <dd>
+                              <input
+                                type="text"
+                                value={selectedPolyline.name ?? ""}
+                                onChange={(e) => patchSelectedPolyline({ name: e.target.value })}
+                                className="mt-0.5 w-full rounded border border-[#d1d5db] px-2 py-1 text-xs"
+                              />
+                            </dd>
+                          </div>
+                          <div><dt className="text-[#6b7280]">{t("polygon.vertices")}</dt><dd>{selectedPolyline.vertices.length}</dd></div>
+                          <div><dt className="text-[#6b7280]">{t("polygon.closed")}</dt><dd>{selectedPolyline.closed ? t("polygon.yes") : t("polygon.no")}</dd></div>
+                          {selectedMetrics ? (
+                            <>
+                              <div><dt className="text-[#6b7280]">{t("polygon.area")}</dt><dd className="font-mono">{selectedMetrics.areaM2.toFixed(2)} m²</dd></div>
+                              <div><dt className="text-[#6b7280]">{t("polygon.perimeter")}</dt><dd className="font-mono">{selectedMetrics.perimeterM.toFixed(2)} m</dd></div>
+                            </>
+                          ) : null}
+                          {canEditSelectedPolyline ? (
+                            <div className="space-y-2 border-t border-[#e5e7eb] pt-3">
+                              <button
+                                type="button"
+                                onClick={() => setTool("editPolygon")}
+                                className={`w-full rounded-lg px-3 py-2 text-xs font-medium ${
+                                  tool === "editPolygon"
+                                    ? "bg-[#00c8f0] text-[#0f2848]"
+                                    : "border border-[#0f2848] text-[#0f2848]"
+                                }`}
+                              >
+                                {t("polygon.edit.start")}
+                              </button>
+                              {tool === "editPolygon" && selectedVertexIndex !== null ? (
+                                <>
+                                  <p className="text-[10px] text-[#6b7280]">
+                                    {t("polygon.edit.vertexLabel", {
+                                      label: vertexLabels(selectedPolyline.vertices.length)[selectedVertexIndex] ?? `#${selectedVertexIndex + 1}`,
+                                    })}
+                                  </p>
+                                  <label className="block text-[10px] text-[#6b7280]">
+                                    E (m)
+                                    <input
+                                      type="text"
+                                      inputMode="decimal"
+                                      value={vertexEditE}
+                                      onChange={(e) => setVertexEditE(e.target.value)}
+                                      className="mt-0.5 w-full rounded border border-[#d1d5db] px-2 py-1 font-mono text-xs"
+                                    />
+                                  </label>
+                                  <label className="block text-[10px] text-[#6b7280]">
+                                    N (m)
+                                    <input
+                                      type="text"
+                                      inputMode="decimal"
+                                      value={vertexEditN}
+                                      onChange={(e) => setVertexEditN(e.target.value)}
+                                      className="mt-0.5 w-full rounded border border-[#d1d5db] px-2 py-1 font-mono text-xs"
+                                    />
+                                  </label>
+                                  <label className="block text-[10px] text-[#6b7280]">
+                                    Z (m)
+                                    <input
+                                      type="text"
+                                      inputMode="decimal"
+                                      value={vertexEditZ}
+                                      onChange={(e) => setVertexEditZ(e.target.value)}
+                                      className="mt-0.5 w-full rounded border border-[#d1d5db] px-2 py-1 font-mono text-xs"
+                                    />
+                                  </label>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => applySelectedVertexCoords(vertexEditE, vertexEditN, vertexEditZ)}
+                                      className="rounded-lg bg-[#0f2848] px-2 py-1.5 text-xs font-medium text-white"
+                                    >
+                                      {t("polygon.edit.applyVertex")}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={removeSelectedPolylineVertex}
+                                      className="rounded-lg border border-red-300 bg-red-50 px-2 py-1.5 text-xs font-medium text-red-700"
+                                    >
+                                      {t("polygon.edit.removeVertex")}
+                                    </button>
+                                  </div>
+                                </>
+                              ) : tool === "editPolygon" ? (
+                                <p className="text-[10px] text-[#6b7280]">{t("polygon.edit.pickVertex")}</p>
+                              ) : null}
+                              {polygonEditNotice ? (
+                                <p className="text-xs text-emerald-700">{polygonEditNotice}</p>
+                              ) : null}
+                            </div>
+                          ) : null}
+                        </>
+                      ) : null}
+                    </dl>
+                  ) : (
+                    <p className="mt-3 text-xs text-[#6b7280]">{t("properties.none")}</p>
+                  )}
+                </section>
               ),
               contour: (
                 <section>
@@ -2683,6 +2784,58 @@ export function CadWorkspace({ userId }: { userId: string }) {
                   <p className="text-[10px] text-[#6b7280]">{t("commands.profileOps.chartHint")}</p>
                 </div>
               ),
+              anm: (
+                <section>
+                  <h3 className="text-sm font-semibold text-[#0f2848]">{t("basemap.anmSectionTitle")}</h3>
+                  <p className="mt-1 text-xs text-[#6b7280]">{t("basemap.anmSectionHint")}</p>
+                  <ul className="mt-3 space-y-2">
+                    {ANM_SIGMINE_LAYER_KEYS.map((layerKey) => {
+                      const def = ANM_SIGMINE_LAYERS[layerKey];
+                      const importKey = `anm:${layerKey}`;
+                      return (
+                        <li
+                          key={layerKey}
+                          className="rounded-lg border border-[#f3f4f6] px-3 py-2"
+                        >
+                          <label className="flex items-start gap-2 text-xs">
+                            <input
+                              type="checkbox"
+                              className="mt-0.5"
+                              checked={basemapOverlays.anmSigmine[layerKey]}
+                              onChange={(e) => patchAnmSigmineOverlay(layerKey, e.target.checked)}
+                            />
+                            <span>
+                              <span className="font-medium" style={{ color: def.color }}>
+                                {t(`basemap.anmLayers.${layerKey}`)}
+                              </span>
+                              <span className="mt-0.5 block text-[10px] text-[#9ca3af]">
+                                {t(`basemap.anmLayersHint.${layerKey}`)}
+                              </span>
+                            </span>
+                          </label>
+                          <button
+                            type="button"
+                            disabled={importingOverlay !== null}
+                            onClick={() => void handleImportOverlay("anm", layerKey)}
+                            className="mt-2 w-full rounded border px-2 py-1.5 text-[11px] font-medium disabled:opacity-50"
+                            style={{ borderColor: def.color, color: def.color }}
+                          >
+                            {importingOverlay === importKey
+                              ? "…"
+                              : t("basemap.importAnmLayer", { layer: t(`basemap.anmLayers.${layerKey}`) })}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {overlayNotice ? (
+                    <p className="mt-2 text-xs text-[#374151]">{overlayNotice}</p>
+                  ) : null}
+                  <p className="mt-2 text-[10px] text-[#9ca3af]">
+                    {t("basemap.anmOpenDataCredit")}
+                  </p>
+                </section>
+              ),
             }}
           />
 
@@ -2719,11 +2872,15 @@ export function CadWorkspace({ userId }: { userId: string }) {
               ))}
               <button
                 type="button"
-                onClick={insertCoordinates}
-                title={t("tools.insertCoords")}
-                className="rounded-md px-3 py-1.5 text-xs font-medium text-[#94a3b8] hover:bg-[#1e293b]"
+                onClick={toggleCoordLabels}
+                title={coordLabelsVisible ? t("tools.hideCoords") : t("tools.insertCoords")}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                  coordLabelsVisible
+                    ? "bg-[#00c8f0] text-[#0f2848]"
+                    : "text-[#94a3b8] hover:bg-[#1e293b]"
+                }`}
               >
-                {t("tools.insertCoords")}
+                {coordLabelsVisible ? t("tools.hideCoords") : t("tools.insertCoords")}
               </button>
               {tool === "polyline" && draft.length >= 2 ? (
                 <>
@@ -2753,7 +2910,35 @@ export function CadWorkspace({ userId }: { userId: string }) {
                   {t("tools.closeSelected")}
                 </button>
               ) : null}
-              <div className="ml-auto flex overflow-hidden rounded-md border border-[#334155]">
+              <div className="ml-auto flex items-center gap-2">
+              <div className="flex overflow-hidden rounded-md border border-[#334155]">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("plan")}
+                  title={t3d("plan")}
+                  className={`border-r border-[#334155] px-3 py-1.5 text-xs font-medium ${
+                    viewMode === "plan" ? "bg-[#00c8f0] text-[#0f2848]" : "text-[#e2e8f0] hover:bg-[#1e293b]"
+                  }`}
+                >
+                  2D
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode("3d");
+                    setTool("pan");
+                    setDraft([]);
+                    setDrawHint(null);
+                  }}
+                  title={t3d("scene")}
+                  className={`px-3 py-1.5 text-xs font-medium ${
+                    viewMode === "3d" ? "bg-[#00c8f0] text-[#0f2848]" : "text-[#e2e8f0] hover:bg-[#1e293b]"
+                  }`}
+                >
+                  3D
+                </button>
+              </div>
+              <div className="flex overflow-hidden rounded-md border border-[#334155]">
                 <button
                   type="button"
                   onClick={zoomOut}
@@ -2772,6 +2957,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
                 >
                   +
                 </button>
+              </div>
               </div>
             </div>
 
@@ -2883,6 +3069,14 @@ export function CadWorkspace({ userId }: { userId: string }) {
             ) : null}
 
             <div ref={canvasContainerRef} className="relative">
+            {viewMode === "3d" ? (
+              <Cad3dView
+                entities={visibleEntities}
+                layers={project.layers}
+                preferTin={hasTinLayer}
+              />
+            ) : (
+            <>
             {hasBasemap ? (
               <CadBasemapLayer
                 viewport={viewport}
@@ -3099,6 +3293,8 @@ export function CadWorkspace({ userId }: { userId: string }) {
               ) : null}
             </svg>
             <CadBasemapAttribution overlays={basemapOverlays} />
+            </>
+            )}
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#1e293b] px-3 py-2 text-[10px] text-[#94a3b8]">
@@ -3106,7 +3302,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
                 E: {cursor ? cursor.x.toFixed(3) : "—"} · N: {cursor ? cursor.y.toFixed(3) : "—"}
                 {showGrid ? ` · ${t("grid.step")} ${grid.stepE.toFixed(2)} m` : ""}
               </span>
-              <span>{t("hints.zoomPan")}</span>
+              <span>{viewMode === "3d" ? t3d("statusHint") : t("hints.zoomPan")}</span>
               {isDrawTool && drawReference ? (
                 <span className="text-[#00c8f0]">{t("draw.keyboardHint")}</span>
               ) : null}
@@ -3125,9 +3321,6 @@ export function CadWorkspace({ userId }: { userId: string }) {
               onSelectedIdChange={setSelectedId}
               onSideEffect={handleAiSideEffect}
               onOpenAiChat={() => setAiChatOpen(true)}
-              onZoomIn={zoomIn}
-              onZoomOut={zoomOut}
-              onFitView={resetView}
               areaPickActive={areaPickMode}
               onStartAreaPick={() => {
                 setDistancePickMode(false);
@@ -3154,382 +3347,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
               }}
               distancePickResult={distancePickResult}
               onClearDistancePickResult={() => setDistancePickResult(null)}
-              profilePickActive={profilePickMode}
-              onStartProfilePick={() => {
-                setAreaPickMode(false);
-                setDistancePickMode(false);
-                setDistancePickIds([]);
-                setProfilePickMode(true);
-                setProfilePickIds([]);
-                setProfilePickResult(null);
-              }}
-              onCancelProfilePick={() => {
-                setProfilePickMode(false);
-                setProfilePickIds([]);
-              }}
-              profilePickResult={profilePickResult}
-              onClearProfilePickResult={() => setProfilePickResult(null)}
             />
-
-            <section className="rounded-xl border border-[#e5e7eb] bg-white p-4">
-              <h3 className="text-sm font-semibold text-[#0f2848]">{t("import.title")}</h3>
-              <p className="mt-1 text-xs text-[#6b7280]">{t("import.hint")}</p>
-              <div className="mt-3 flex flex-col gap-2">
-                <button
-                  type="button"
-                  disabled={importingPoints || importingRaster}
-                  onClick={openSurveyImport}
-                  className="rounded-lg border border-[#38bdf8] px-3 py-2 text-xs font-medium text-[#0369a1] hover:bg-[#f0f9ff] disabled:opacity-50"
-                >
-                  {importingPoints ? t("import.working") : t("import.pointsFile")}
-                </button>
-                <button
-                  type="button"
-                  disabled={importingPoints || importingRaster}
-                  onClick={openExcelImport}
-                  className="rounded-lg border border-[#0f2848] px-3 py-2 text-xs font-medium text-[#0f2848] hover:bg-[#f0f4f8] disabled:opacity-50"
-                >
-                  {importingPoints ? t("import.working") : t("import.excel")}
-                </button>
-                <button
-                  type="button"
-                  disabled={importingRaster || importingPoints}
-                  onClick={() => window.requestAnimationFrame(() => orthoFileRef.current?.click())}
-                  className="rounded-lg border border-[#16a34a] px-3 py-2 text-xs font-medium text-[#15803d] hover:bg-[#f0fdf4] disabled:opacity-50"
-                >
-                  {importingRaster ? t("import.working") : t("import.orthophoto")}
-                </button>
-              </div>
-              <p className="mt-2 text-[10px] text-[#9ca3af]">{t("import.excelHint")}</p>
-              <p className="mt-1 text-[10px] text-[#9ca3af]">{t("import.orthoFormats")}</p>
-              {importNotice ? (
-                <p className={`mt-2 text-xs ${importNotice.includes("Falha") || importNotice.includes("GDAL") || importNotice.includes("Nenhum") ? "text-red-600" : "text-emerald-700"}`}>
-                  {importNotice}
-                </p>
-              ) : null}
-            </section>
-
-            <section className="rounded-xl border border-[#e5e7eb] bg-white p-4">
-              <h3 className="text-sm font-semibold text-[#0f2848]">{t("basemap.sicarSectionTitle")}</h3>
-              <p className="mt-1 text-xs text-[#6b7280]">{t("basemap.sicarSectionHint")}</p>
-              <div className="mt-3 flex flex-col gap-2">
-                <input
-                  type="text"
-                  value={sicarCodigo}
-                  onChange={(e) => setSicarCodigo(e.target.value.toUpperCase())}
-                  placeholder={t("basemap.sicarCodigoPlaceholder")}
-                  className="w-full rounded-lg border border-[#d1d5db] px-3 py-2 font-mono text-xs"
-                />
-                <button
-                  type="button"
-                  disabled={sicarLoading || importingOverlay !== null}
-                  onClick={() => void handleSicarLookup()}
-                  className="rounded-lg border border-[#22c55e] px-3 py-2 text-xs font-medium text-[#15803d] disabled:opacity-50"
-                >
-                  {sicarLoading ? "…" : t("basemap.sicarLookup")}
-                </button>
-              </div>
-              {sicarTemas.length > 0 ? (
-                <ul className="mt-3 max-h-48 space-y-1 overflow-y-auto text-xs">
-                  {sicarTemas.map((row) => (
-                    <li key={row.tema}>
-                      <label className="flex items-start gap-2 rounded px-1 py-1 hover:bg-[#f9fafb]">
-                        <input
-                          type="checkbox"
-                          className="mt-0.5"
-                          disabled={!row.hasGeometry}
-                          checked={sicarSelectedTemas.has(row.tema)}
-                          onChange={(e) => {
-                            setSicarSelectedTemas((prev) => {
-                              const next = new Set(prev);
-                              if (e.target.checked) next.add(row.tema);
-                              else next.delete(row.tema);
-                              return next;
-                            });
-                          }}
-                        />
-                        <span>
-                          <span className="font-medium">{row.tema}</span>
-                          {row.areaTotalTema ? (
-                            <span className="ml-1 text-[#6b7280]">({row.areaTotalTema} ha)</span>
-                          ) : null}
-                          {!row.hasGeometry ? (
-                            <span className="ml-1 text-[#9ca3af]">— sem polígono</span>
-                          ) : null}
-                        </span>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              {sicarTemas.length > 0 ? (
-                <button
-                  type="button"
-                  disabled={importingOverlay !== null || sicarSelectedTemas.size === 0}
-                  onClick={() => void handleSicarImport()}
-                  className="mt-3 w-full rounded-lg bg-[#22c55e] px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
-                >
-                  {importingOverlay === "sicar" ? "…" : t("basemap.sicarImport")}
-                </button>
-              ) : null}
-              <p className="mt-2 text-[10px] text-[#9ca3af]">{t("basemap.sicarApiCredit")}</p>
-            </section>
-
-            <section className="rounded-xl border border-[#e5e7eb] bg-white p-4">
-              <h3 className="text-sm font-semibold text-[#0f2848]">{t("basemap.anmSectionTitle")}</h3>
-              <p className="mt-1 text-xs text-[#6b7280]">{t("basemap.anmSectionHint")}</p>
-              <ul className="mt-3 space-y-2">
-                {ANM_SIGMINE_LAYER_KEYS.map((layerKey) => {
-                  const def = ANM_SIGMINE_LAYERS[layerKey];
-                  const importKey = `anm:${layerKey}`;
-                  return (
-                    <li
-                      key={layerKey}
-                      className="rounded-lg border border-[#f3f4f6] px-3 py-2"
-                    >
-                      <label className="flex items-start gap-2 text-xs">
-                        <input
-                          type="checkbox"
-                          className="mt-0.5"
-                          checked={basemapOverlays.anmSigmine[layerKey]}
-                          onChange={(e) => patchAnmSigmineOverlay(layerKey, e.target.checked)}
-                        />
-                        <span>
-                          <span className="font-medium" style={{ color: def.color }}>
-                            {t(`basemap.anmLayers.${layerKey}`)}
-                          </span>
-                          <span className="mt-0.5 block text-[10px] text-[#9ca3af]">
-                            {t(`basemap.anmLayersHint.${layerKey}`)}
-                          </span>
-                        </span>
-                      </label>
-                      <button
-                        type="button"
-                        disabled={importingOverlay !== null}
-                        onClick={() => void handleImportOverlay("anm", layerKey)}
-                        className="mt-2 w-full rounded border px-2 py-1.5 text-[11px] font-medium disabled:opacity-50"
-                        style={{ borderColor: def.color, color: def.color }}
-                      >
-                        {importingOverlay === importKey
-                          ? "…"
-                          : t("basemap.importAnmLayer", { layer: t(`basemap.anmLayers.${layerKey}`) })}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-              <p className="mt-2 text-[10px] text-[#9ca3af]">
-                {t("basemap.anmOpenDataCredit")}
-              </p>
-            </section>
-
-            <section className="rounded-xl border border-[#e5e7eb] bg-white p-4">
-              <h3 className="text-sm font-semibold text-[#0f2848]">{t("basemap.importTitle")}</h3>
-              <p className="mt-1 text-xs text-[#6b7280]">{t("basemap.importHint")}</p>
-              <div className="mt-3 flex flex-col gap-2">
-                <button
-                  type="button"
-                  disabled={importingOverlay !== null}
-                  onClick={() => void handleImportOverlay("hidro")}
-                  className="rounded-lg border border-[#3b82f6] px-3 py-2 text-xs font-medium text-[#1d4ed8] disabled:opacity-50"
-                >
-                  {importingOverlay === "hidro" ? "…" : t("basemap.importHidro")}
-                </button>
-              </div>
-              {overlayNotice ? (
-                <p className="mt-2 text-xs text-[#374151]">{overlayNotice}</p>
-              ) : null}
-            </section>
-
-            <section className="rounded-xl border border-[#e5e7eb] bg-white p-4">
-              <h3 className="text-sm font-semibold text-[#0f2848]">{t("properties.title")}</h3>
-              {selectedEntity ? (
-                <dl className="mt-3 space-y-2 text-xs">
-                  <div>
-                    <dt className="text-[#6b7280]">Tipo</dt>
-                    <dd className="font-medium">{selectedEntity.type}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-[#6b7280]">{t("layers.entityLayer")}</dt>
-                    <dd>
-                      <select
-                        value={selectedEntity.layerId}
-                        onChange={(e) => moveEntityToLayer(selectedEntity.id, e.target.value)}
-                        className="mt-0.5 w-full rounded border border-[#d1d5db] px-2 py-1 font-mono text-xs"
-                      >
-                        {project.layers.map((layer) => (
-                          <option key={layer.id} value={layer.id}>
-                            {layer.name}
-                          </option>
-                        ))}
-                      </select>
-                    </dd>
-                  </div>
-                  {selectedEntity.type === "point" ? (
-                    <>
-                      <div>
-                        <dt className="text-[#6b7280]">{t("point.label")}</dt>
-                        <dd>
-                          <input
-                            type="text"
-                            value={selectedEntity.label ?? ""}
-                            onChange={(e) => updatePointLabel(selectedEntity.id, e.target.value)}
-                            className="mt-0.5 w-full rounded border border-[#d1d5db] px-2 py-1 font-mono text-xs"
-                          />
-                        </dd>
-                      </div>
-                      <div><dt className="text-[#6b7280]">E</dt><dd className="font-mono">{selectedEntity.x.toFixed(4)}</dd></div>
-                      <div><dt className="text-[#6b7280]">N</dt><dd className="font-mono">{selectedEntity.y.toFixed(4)}</dd></div>
-                      <div>
-                        <dt className="text-[#6b7280]">Z ({t("point.elevation")})</dt>
-                        <dd className="space-y-1.5">
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            value={pointEditZ}
-                            onChange={(e) => setPointEditZ(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") applySelectedPointElevation();
-                            }}
-                            className="mt-0.5 w-full rounded border border-[#d1d5db] px-2 py-1 font-mono text-xs"
-                          />
-                          <button
-                            type="button"
-                            onClick={applySelectedPointElevation}
-                            className="w-full rounded-lg bg-[#0f2848] px-2 py-1.5 text-xs font-medium text-white"
-                          >
-                            {t("point.applyElevation")}
-                          </button>
-                        </dd>
-                      </div>
-                      <div className="pt-2">
-                        <button
-                          type="button"
-                          onClick={() => deleteSelectedEntity()}
-                          className="w-full rounded-lg border border-red-300 bg-red-50 px-2 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100"
-                        >
-                          {t("point.delete")}
-                        </button>
-                        {selectedEntity.locked ? (
-                          <p className="mt-1 text-[10px] text-amber-700">{t("point.deleteLockedHint")}</p>
-                        ) : null}
-                      </div>
-                      {pointActionNotice ? (
-                        <p
-                          className={`text-xs ${
-                            pointActionNotice.includes("válida") || pointActionNotice.includes("bloqueado")
-                              ? "text-amber-700"
-                              : "text-emerald-700"
-                          }`}
-                        >
-                          {pointActionNotice}
-                        </p>
-                      ) : null}
-                    </>
-                  ) : null}
-                  {selectedPolyline ? (
-                    <>
-                      <div>
-                        <dt className="text-[#6b7280]">{t("polygon.name")}</dt>
-                        <dd>
-                          <input
-                            type="text"
-                            value={selectedPolyline.name ?? ""}
-                            onChange={(e) => patchSelectedPolyline({ name: e.target.value })}
-                            className="mt-0.5 w-full rounded border border-[#d1d5db] px-2 py-1 text-xs"
-                          />
-                        </dd>
-                      </div>
-                      <div><dt className="text-[#6b7280]">{t("polygon.vertices")}</dt><dd>{selectedPolyline.vertices.length}</dd></div>
-                      <div><dt className="text-[#6b7280]">{t("polygon.closed")}</dt><dd>{selectedPolyline.closed ? t("polygon.yes") : t("polygon.no")}</dd></div>
-                      {selectedMetrics ? (
-                        <>
-                          <div><dt className="text-[#6b7280]">{t("polygon.area")}</dt><dd className="font-mono">{selectedMetrics.areaM2.toFixed(2)} m²</dd></div>
-                          <div><dt className="text-[#6b7280]">{t("polygon.perimeter")}</dt><dd className="font-mono">{selectedMetrics.perimeterM.toFixed(2)} m</dd></div>
-                        </>
-                      ) : null}
-                      {canEditSelectedPolyline ? (
-                        <div className="space-y-2 border-t border-[#e5e7eb] pt-3">
-                          <button
-                            type="button"
-                            onClick={() => setTool("editPolygon")}
-                            className={`w-full rounded-lg px-3 py-2 text-xs font-medium ${
-                              tool === "editPolygon"
-                                ? "bg-[#00c8f0] text-[#0f2848]"
-                                : "border border-[#0f2848] text-[#0f2848]"
-                            }`}
-                          >
-                            {t("polygon.edit.start")}
-                          </button>
-                          {tool === "editPolygon" && selectedVertexIndex !== null ? (
-                            <>
-                              <p className="text-[10px] text-[#6b7280]">
-                                {t("polygon.edit.vertexLabel", {
-                                  label: vertexLabels(selectedPolyline.vertices.length)[selectedVertexIndex] ?? `#${selectedVertexIndex + 1}`,
-                                })}
-                              </p>
-                              <label className="block text-[10px] text-[#6b7280]">
-                                E (m)
-                                <input
-                                  type="text"
-                                  inputMode="decimal"
-                                  value={vertexEditE}
-                                  onChange={(e) => setVertexEditE(e.target.value)}
-                                  className="mt-0.5 w-full rounded border border-[#d1d5db] px-2 py-1 font-mono text-xs"
-                                />
-                              </label>
-                              <label className="block text-[10px] text-[#6b7280]">
-                                N (m)
-                                <input
-                                  type="text"
-                                  inputMode="decimal"
-                                  value={vertexEditN}
-                                  onChange={(e) => setVertexEditN(e.target.value)}
-                                  className="mt-0.5 w-full rounded border border-[#d1d5db] px-2 py-1 font-mono text-xs"
-                                />
-                              </label>
-                              <label className="block text-[10px] text-[#6b7280]">
-                                Z (m)
-                                <input
-                                  type="text"
-                                  inputMode="decimal"
-                                  value={vertexEditZ}
-                                  onChange={(e) => setVertexEditZ(e.target.value)}
-                                  className="mt-0.5 w-full rounded border border-[#d1d5db] px-2 py-1 font-mono text-xs"
-                                />
-                              </label>
-                              <div className="grid grid-cols-2 gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => applySelectedVertexCoords(vertexEditE, vertexEditN, vertexEditZ)}
-                                  className="rounded-lg bg-[#0f2848] px-2 py-1.5 text-xs font-medium text-white"
-                                >
-                                  {t("polygon.edit.applyVertex")}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={removeSelectedPolylineVertex}
-                                  className="rounded-lg border border-red-300 bg-red-50 px-2 py-1.5 text-xs font-medium text-red-700"
-                                >
-                                  {t("polygon.edit.removeVertex")}
-                                </button>
-                              </div>
-                            </>
-                          ) : tool === "editPolygon" ? (
-                            <p className="text-[10px] text-[#6b7280]">{t("polygon.edit.pickVertex")}</p>
-                          ) : null}
-                          {polygonEditNotice ? (
-                            <p className="text-xs text-emerald-700">{polygonEditNotice}</p>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </>
-                  ) : null}
-                </dl>
-              ) : (
-                <p className="mt-3 text-xs text-[#6b7280]">{t("properties.none")}</p>
-              )}
-            </section>
 
             <section className="rounded-xl border border-[#e5e7eb] bg-white p-4">
               <h3 className="text-sm font-semibold text-[#0f2848]">{t("memorial.title")}</h3>
@@ -3691,17 +3509,6 @@ export function CadWorkspace({ userId }: { userId: string }) {
           const file = e.target.files?.[0];
           e.target.value = "";
           if (file) handleImportSurveyPoints(file);
-        }}
-      />
-      <input
-        ref={orthoFileRef}
-        type="file"
-        accept=".tif,.tiff,.jpg,.jpeg,.png,.webp"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          e.target.value = "";
-          if (file) void handleImportOrthophoto(file);
         }}
       />
     </div>

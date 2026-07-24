@@ -1,20 +1,112 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { CadEntity, CadPointEntity } from "@/lib/rtk-validation/cad/types";
 
 const OBSERVATION_LAYER_IDS = new Set(["rtk_points", "ctrl_known", "ctrl_obs"]);
+
+export type CadPointPatch = Partial<Pick<CadPointEntity, "label" | "x" | "y" | "z">>;
 
 type CadPointObservationsProps = {
   entities: CadEntity[];
   layers: { id: string; name: string }[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onUpdatePoint: (id: string, patch: CadPointPatch) => void;
 };
 
 function layerName(layers: CadPointObservationsProps["layers"], layerId: string) {
   return layers.find((l) => l.id === layerId)?.name ?? layerId;
+}
+
+function parseCoord(text: string): number | null {
+  const n = Number(text.trim().replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+}
+
+function EditableTextCell({
+  value,
+  onCommit,
+  onFocusSelect,
+}: {
+  value: string;
+  onCommit: (next: string) => void;
+  onFocusSelect?: () => void;
+}) {
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  const commit = () => {
+    const trimmed = draft.trim();
+    if (trimmed !== value) onCommit(trimmed);
+    else setDraft(value);
+  };
+
+  return (
+    <input
+      type="text"
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onFocus={() => onFocusSelect?.()}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+        e.stopPropagation();
+      }}
+      onClick={(e) => e.stopPropagation()}
+      className="w-full min-w-[4.5rem] rounded border border-transparent bg-transparent px-1 py-0.5 font-medium text-[#0f2848] hover:border-[#d1d5db] focus:border-[#0891b2] focus:bg-white focus:outline-none"
+    />
+  );
+}
+
+function EditableNumberCell({
+  value,
+  decimals,
+  onCommit,
+  onFocusSelect,
+}: {
+  value: number;
+  decimals: number;
+  onCommit: (next: number) => void;
+  onFocusSelect?: () => void;
+}) {
+  const formatted = value.toFixed(decimals);
+  const [draft, setDraft] = useState(formatted);
+
+  useEffect(() => {
+    setDraft(value.toFixed(decimals));
+  }, [value, decimals]);
+
+  const commit = () => {
+    const parsed = parseCoord(draft);
+    if (parsed == null) {
+      setDraft(formatted);
+      return;
+    }
+    if (Math.abs(parsed - value) > 1e-9) onCommit(parsed);
+    else setDraft(formatted);
+  };
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onFocus={() => onFocusSelect?.()}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+        e.stopPropagation();
+      }}
+      onClick={(e) => e.stopPropagation()}
+      className="w-full min-w-[5.5rem] rounded border border-transparent bg-transparent px-1 py-0.5 font-mono text-[#374151] hover:border-[#d1d5db] focus:border-[#0891b2] focus:bg-white focus:outline-none"
+    />
+  );
 }
 
 export function CadPointObservations({
@@ -22,6 +114,7 @@ export function CadPointObservations({
   layers,
   selectedId,
   onSelect,
+  onUpdatePoint,
 }: CadPointObservationsProps) {
   const t = useTranslations("rtkCad.observations");
   const [open, setOpen] = useState(true);
@@ -56,7 +149,7 @@ export function CadPointObservations({
       {open ? (
         <div className="border-t border-[#e5e7eb] px-4 pb-4">
           <p className="pt-3 text-xs text-[#6b7280]">{t("hint")}</p>
-          <div className="mt-3 max-h-40 overflow-y-auto rounded-lg border border-[#e5e7eb]">
+          <div className="mt-3 max-h-52 overflow-y-auto rounded-lg border border-[#e5e7eb]">
             <table className="w-full text-left text-xs">
               <thead className="sticky top-0 bg-[#f9fafb] text-[#6b7280]">
                 <tr>
@@ -70,31 +163,46 @@ export function CadPointObservations({
               <tbody>
                 {points.map((pt) => {
                   const active = pt.id === selectedId;
+                  const selectRow = () => onSelect(pt.id);
                   return (
                     <tr
                       key={pt.id}
-                      className={active ? "bg-[#f0fdff]" : "hover:bg-[#f9fafb]"}
+                      onClick={selectRow}
+                      className={`cursor-pointer ${active ? "bg-[#f0fdff]" : "hover:bg-[#f9fafb]"}`}
                     >
-                      <td className="px-3 py-2">
-                        <button
-                          type="button"
-                          onClick={() => onSelect(pt.id)}
-                          className="font-medium text-[#0f2848] hover:text-[#0891b2]"
-                        >
-                          {pt.label ?? pt.id}
-                        </button>
+                      <td className="px-2 py-1.5">
+                        <EditableTextCell
+                          value={pt.label ?? pt.id}
+                          onFocusSelect={selectRow}
+                          onCommit={(label) => onUpdatePoint(pt.id, { label: label || pt.label })}
+                        />
                       </td>
                       <td className="px-3 py-2 text-[#6b7280]">
                         {layerName(layers, pt.layerId)}
                       </td>
-                      <td className="hidden px-3 py-2 font-mono text-[#374151] sm:table-cell">
-                        {pt.x.toFixed(3)}
+                      <td className="hidden px-2 py-1.5 sm:table-cell">
+                        <EditableNumberCell
+                          value={pt.x}
+                          decimals={3}
+                          onFocusSelect={selectRow}
+                          onCommit={(x) => onUpdatePoint(pt.id, { x })}
+                        />
                       </td>
-                      <td className="hidden px-3 py-2 font-mono text-[#374151] sm:table-cell">
-                        {pt.y.toFixed(3)}
+                      <td className="hidden px-2 py-1.5 sm:table-cell">
+                        <EditableNumberCell
+                          value={pt.y}
+                          decimals={3}
+                          onFocusSelect={selectRow}
+                          onCommit={(y) => onUpdatePoint(pt.id, { y })}
+                        />
                       </td>
-                      <td className="px-3 py-2 font-mono text-[#374151]">
-                        {pt.z.toFixed(3)}
+                      <td className="px-2 py-1.5">
+                        <EditableNumberCell
+                          value={pt.z}
+                          decimals={3}
+                          onFocusSelect={selectRow}
+                          onCommit={(z) => onUpdatePoint(pt.id, { z })}
+                        />
                       </td>
                     </tr>
                   );
@@ -106,5 +214,4 @@ export function CadPointObservations({
       ) : null}
     </section>
   );
-
 }

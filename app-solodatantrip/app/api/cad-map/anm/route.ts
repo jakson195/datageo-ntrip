@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  fetchArcGisExportMap,
-  fetchArcGisWmsMap,
-  parseBbox4326,
-  parseMapDimensions,
-} from "@/lib/cad-map/fetch-map-image";
+import { parseBbox4326, parseMapDimensions } from "@/lib/cad-map/fetch-map-image";
+import { fetchAnmSigmineMapImage } from "@/lib/cad-map/fetch-anm-map-image";
 import {
   ANM_SIGMINE_MAPSERVER,
   ANM_SIGMINE_WMS,
@@ -34,33 +30,29 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const exportResult = await fetchArcGisExportMap(
+    const mapResult = await fetchAnmSigmineMapImage(
       ANM_SIGMINE_MAPSERVER,
+      ANM_SIGMINE_WMS,
       layerIds,
       bbox,
       width,
       height,
     );
-    if (exportResult) {
-      return new NextResponse(exportResult.body, {
-        headers: {
-          "Content-Type": exportResult.contentType,
-          "Cache-Control": "public, max-age=300",
+
+    if (mapResult === "empty") {
+      return NextResponse.json(
+        {
+          error:
+            "Nenhum processo minerário nesta área — aproxime o zoom ou navegue até a região com dados ANM.",
         },
-      });
+        { status: 404 },
+      );
     }
 
-    const wmsResult = await fetchArcGisWmsMap(
-      ANM_SIGMINE_WMS,
-      layerIds.join(","),
-      bbox,
-      width,
-      height,
-    );
-    if (wmsResult) {
-      return new NextResponse(wmsResult.body, {
+    if (mapResult) {
+      return new NextResponse(mapResult.body, {
         headers: {
-          "Content-Type": wmsResult.contentType,
+          "Content-Type": mapResult.contentType,
           "Cache-Control": "public, max-age=300",
         },
       });

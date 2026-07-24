@@ -6,10 +6,12 @@ import { useTranslations } from "next-intl";
 export type CadToolsTab =
   | "draw"
   | "layers"
+  | "properties"
   | "contour"
   | "tin"
   | "hypsometric"
-  | "profile";
+  | "profile"
+  | "anm";
 
 type CadToolsSidebarProps = {
   activeTab: CadToolsTab;
@@ -20,10 +22,12 @@ type CadToolsSidebarProps = {
 const TAB_ORDER: CadToolsTab[] = [
   "draw",
   "layers",
+  "properties",
   "contour",
   "tin",
   "hypsometric",
   "profile",
+  "anm",
 ];
 
 export function CadToolsSidebar({

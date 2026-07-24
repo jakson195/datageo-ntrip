@@ -38,7 +38,11 @@ export type EnLatLonResolved = {
 };
 
 function inBrazil(lat: number, lon: number) {
-  return lat >= -35 && lat <= 6 && lon >= -75 && lon <= -30;
+  if (lat < -35 || lat > 6 || lon < -75 || lon > -30) return false;
+  // Falsos positivos: mesmo par E/N UTM pode projetar no Chile/Argentina com fuso errado.
+  if (lat < -20 && lon < -57) return false;
+  if (lat < -10 && lon < -62) return false;
+  return true;
 }
 
 /** Fuso UTM (18–25) a partir da longitude WGS84. */
@@ -58,8 +62,13 @@ function looksLikeUtmNorthingSouth(v: number): boolean {
   return v >= 1_000_000 && v <= 10_500_000;
 }
 
+function brazilLocationBias(lat: number, lon: number): number {
+  if (lat < -20) return Math.abs(lon + 51);
+  return Math.hypot(lon + 54, lat + 14);
+}
+
 function resolveEnPair(a: number, b: number, swapped: boolean): (EnLatLonResolved & { score: number }) | null {
-  let best: (EnLatLonResolved & { score: number }) | null = null;
+  let best: (EnLatLonResolved & { score: number; locationBias: number }) | null = null;
 
   for (let zone = 18; zone <= 25; zone++) {
     const crs = SIRGAS_UTM_SOUTH[zone];
@@ -72,12 +81,19 @@ function resolveEnPair(a: number, b: number, swapped: boolean): (EnLatLonResolve
 
     const centralMeridian = zone * 6 - 183;
     const score = Math.abs(lon - centralMeridian);
-    if (!best || score < best.score) {
-      best = { e: a, n: b, lat, lon, zone, epsg: crs, swapped, score };
+    const locationBias = brazilLocationBias(lat, lon);
+    if (
+      !best ||
+      score < best.score - 1e-6 ||
+      (Math.abs(score - best.score) <= 1e-6 && locationBias < best.locationBias - 1e-6)
+    ) {
+      best = { e: a, n: b, lat, lon, zone, epsg: crs, swapped, score, locationBias };
     }
   }
 
-  return best;
+  if (!best) return null;
+  const { locationBias: _locationBias, ...resolved } = best;
+  return resolved;
 }
 
 export function resolveEnToLatLon(e: number, n: number): EnLatLonResolved {
@@ -100,7 +116,12 @@ export function resolveEnToLatLon(e: number, n: number): EnLatLonResolved {
 
   if (candidates.length > 0) {
     candidates.sort((a, b) => {
-      if (a.zone !== b.zone) return a.zone - b.zone;
+      const scoreA = Math.abs(a.lon - (a.zone * 6 - 183));
+      const scoreB = Math.abs(b.lon - (b.zone * 6 - 183));
+      if (Math.abs(scoreA - scoreB) > 1e-6) return scoreA - scoreB;
+      const biasA = brazilLocationBias(a.lat, a.lon);
+      const biasB = brazilLocationBias(b.lat, b.lon);
+      if (Math.abs(biasA - biasB) > 1e-6) return biasA - biasB;
       return Number(a.swapped) - Number(b.swapped);
     });
     return candidates[0];

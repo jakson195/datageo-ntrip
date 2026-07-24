@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { executeCadAiCommand, importKmzIntoProject } from "@/lib/rtk-validation/cad/ai-command-executor";
 import { importSurveyPointsToProject } from "@/lib/rtk-validation/cad/import-survey-points";
@@ -34,11 +34,33 @@ export interface CadCommandsPanelProps {
   onCancelProfilePick?: () => void;
   profilePickResult?: string | null;
   onClearProfilePickResult?: () => void;
-  onZoomIn?: () => void;
-  onZoomOut?: () => void;
-  onFitView?: () => void;
   variant?: "full" | "profileOnly";
 }
+
+type CadCommandTab = "createPoint" | "point" | "distance" | "area" | "quick";
+
+const COMMAND_TAB_ORDER: CadCommandTab[] = [
+  "createPoint",
+  "point",
+  "distance",
+  "area",
+  "quick",
+];
+
+function commandTabClass(active: boolean) {
+  return `whitespace-nowrap rounded-lg px-3 py-2 text-left text-xs font-medium transition xl:w-full ${
+    active ? "bg-[#0f2848] text-white" : "text-[#374151] hover:bg-[#f3f4f6]"
+  }`;
+}
+
+const BTN_PRIMARY =
+  "rounded-lg bg-[#0f2848] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1a3a5c] disabled:opacity-50";
+const BTN_SECONDARY =
+  "rounded-lg border border-[#d1d5db] px-3 py-2 text-xs font-medium text-[#0f2848] hover:bg-[#f9fafb] disabled:opacity-50";
+const BTN_OUTLINE =
+  "rounded-lg border border-[#0f2848] px-3 py-2 text-xs font-medium text-[#0f2848] hover:bg-[#f0f4f8] disabled:opacity-50";
+const BTN_DANGER =
+  "rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50";
 
 type CommandBtn = {
   id: string;
@@ -83,13 +105,11 @@ export function CadCommandsPanel({
   onCancelProfilePick,
   profilePickResult,
   onClearProfilePickResult,
-  onZoomIn,
-  onZoomOut,
-  onFitView,
   variant = "full",
 }: CadCommandsPanelProps) {
   const t = useTranslations("rtkCad.commands");
   const tAi = useTranslations("rtkCad.ai");
+  const [activeTab, setActiveTab] = useState<CadCommandTab>("createPoint");
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -352,11 +372,7 @@ export function CadCommandsPanel({
       return;
     }
     if (btn.id === "text") {
-      const texto =
-        window.prompt(t("textPrompt"), labelText.trim() || "Lote 01")?.trim() ||
-        labelText.trim() ||
-        "Lote 01";
-      setLabelText(texto);
+      const texto = labelText.trim() || "Lote 01";
       run({ acao: "inserir_texto", texto }, btn.id);
       return;
     }
@@ -449,17 +465,17 @@ export function CadCommandsPanel({
   };
 
   const profileSection = (
-    <div className="rounded-lg border border-[#e5e7eb] bg-white p-3">
-      <h4 className="text-xs font-semibold text-[#0f2848]">{t("profileOps.title")}</h4>
-      <p className="mt-0.5 text-[10px] text-[#6b7280]">{t("profileOps.hint")}</p>
+    <section>
+      <h3 className="text-sm font-semibold text-[#0f2848]">{t("profileOps.title")}</h3>
+      <p className="mt-1 text-xs text-[#6b7280]">{t("profileOps.hint")}</p>
 
       {pendingProfileStart ? (
-        <p className="mt-2 rounded-md bg-amber-50 px-2 py-1.5 text-[10px] text-amber-800">
+        <p className="mt-2 rounded-md bg-amber-50 px-2 py-1.5 text-xs text-amber-800">
           {t("profileOps.pendingStart", { point: pendingProfileStart })}
         </p>
       ) : null}
 
-      <div className="mt-2 grid grid-cols-2 gap-2">
+      <div className="mt-3 grid grid-cols-2 gap-2">
         <label className="block text-xs font-medium text-[#374151]">
           {t("profileOps.startPoint")}
           <input
@@ -482,12 +498,12 @@ export function CadCommandsPanel({
         </label>
       </div>
 
-      <div className="mt-2 grid grid-cols-2 gap-2">
+      <div className="mt-3 grid grid-cols-2 gap-2">
         <button
           type="button"
           disabled={busy !== null || profilePickActive}
           onClick={startProfilePick}
-          className="rounded-lg border border-[#0891b2] px-2 py-2 text-xs font-medium text-[#0891b2] hover:bg-[#ecfeff] disabled:opacity-50"
+          className={BTN_OUTLINE}
         >
           {profilePickActive ? t("profileOps.picking") : t("profileOps.pickOnCanvas")}
         </button>
@@ -495,74 +511,33 @@ export function CadCommandsPanel({
           type="button"
           disabled={busy !== null}
           onClick={applyProfile}
-          className="rounded-lg bg-[#0891b2] px-2 py-2 text-xs font-semibold text-white disabled:opacity-50"
+          className={BTN_PRIMARY}
         >
           {busy === "profileApply" ? "…" : t("profileOps.generate")}
         </button>
       </div>
 
       {profilePickActive ? (
-        <button
-          type="button"
-          onClick={cancelProfilePick}
-          className="mt-2 w-full rounded-lg border border-[#d1d5db] px-2 py-1.5 text-xs text-[#6b7280] hover:bg-[#f9fafb]"
-        >
+        <button type="button" onClick={cancelProfilePick} className={`mt-2 w-full ${BTN_SECONDARY}`}>
           {t("profileOps.cancelPick")}
         </button>
       ) : null}
-    </div>
+    </section>
   );
 
-  if (variant === "profileOnly") {
-    return (
-      <div className="space-y-3">
-        {profileSection}
-        {notice ? <p className="text-xs text-emerald-700">{notice}</p> : null}
-        {error ? <p className="text-xs text-red-600">{error}</p> : null}
-      </div>
-    );
-  }
+  const statusMessages = (
+    <>
+      {notice ? <p className="text-xs text-emerald-700">{notice}</p> : null}
+      {error ? <p className="text-xs text-red-600">{error}</p> : null}
+    </>
+  );
 
-  return (
-    <section className="rounded-xl border border-[#c4b5fd] bg-gradient-to-b from-[#faf5ff] to-white p-4">
-      <h3 className="text-sm font-semibold text-[#0f2848]">{t("title")}</h3>
-      <p className="mt-0.5 text-xs text-[#6b7280]">{t("hint")}</p>
-
-      {onZoomIn && onZoomOut && onFitView ? (
-        <div className="mt-3 rounded-lg border border-[#e5e7eb] bg-white p-3">
-          <h4 className="text-xs font-semibold text-[#0f2848]">{t("zoomOps.title")}</h4>
-          <p className="mt-0.5 text-[10px] text-[#6b7280]">{t("zoomOps.hint")}</p>
-          <div className="mt-2 grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={onZoomOut}
-              className="rounded-lg border border-[#d1d5db] px-2 py-2 text-xs font-semibold text-[#0f2848] hover:bg-[#f9fafb]"
-            >
-              {t("zoomOps.out")}
-            </button>
-            <button
-              type="button"
-              onClick={onZoomIn}
-              className="rounded-lg border border-[#d1d5db] px-2 py-2 text-xs font-semibold text-[#0f2848] hover:bg-[#f9fafb]"
-            >
-              {t("zoomOps.in")}
-            </button>
-            <button
-              type="button"
-              onClick={onFitView}
-              className="rounded-lg bg-[#0f2848] px-2 py-2 text-xs font-semibold text-white"
-            >
-              {t("zoomOps.fit")}
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      <div className="mt-3 rounded-lg border border-[#e5e7eb] bg-white p-3">
-        <h4 className="text-xs font-semibold text-[#0f2848]">{t("createPointOps.title")}</h4>
-        <p className="mt-0.5 text-[10px] text-[#6b7280]">{t("createPointOps.hint")}</p>
-
-        <label className="mt-2 block text-xs font-medium text-[#374151]">
+  const tabSections: Record<CadCommandTab, ReactNode> = {
+    createPoint: (
+      <section>
+        <h3 className="text-sm font-semibold text-[#0f2848]">{t("createPointOps.title")}</h3>
+        <p className="mt-1 text-xs text-[#6b7280]">{t("createPointOps.hint")}</p>
+        <label className="mt-3 block text-xs font-medium text-[#374151]">
           {t("createPointOps.label")}
           <input
             type="text"
@@ -572,8 +547,7 @@ export function CadCommandsPanel({
             className="mt-1 w-full rounded-lg border border-[#d1d5db] px-3 py-2 text-xs"
           />
         </label>
-
-        <div className="mt-2 grid grid-cols-3 gap-2">
+        <div className="mt-3 grid grid-cols-3 gap-2">
           <label className="block text-xs font-medium text-[#374151]">
             {t("createPointOps.east")}
             <input
@@ -608,22 +582,21 @@ export function CadCommandsPanel({
             />
           </label>
         </div>
-
         <button
           type="button"
           disabled={busy !== null}
           onClick={applyCreatePoint}
-          className="mt-3 w-full rounded-lg bg-[#7c3aed] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+          className={`mt-3 w-full ${BTN_PRIMARY}`}
         >
           {busy === "createPointApply" ? t("working") : t("createPointOps.insert")}
         </button>
-      </div>
-
-      <div className="mt-3 rounded-lg border border-[#e5e7eb] bg-white p-3">
-        <h4 className="text-xs font-semibold text-[#0f2848]">{t("pointOps.title")}</h4>
-        <p className="mt-0.5 text-[10px] text-[#6b7280]">{t("pointOps.hint")}</p>
-
-        <label className="mt-2 block text-xs font-medium text-[#374151]">
+      </section>
+    ),
+    point: (
+      <section>
+        <h3 className="text-sm font-semibold text-[#0f2848]">{t("pointOps.title")}</h3>
+        <p className="mt-1 text-xs text-[#6b7280]">{t("pointOps.hint")}</p>
+        <label className="mt-3 block text-xs font-medium text-[#374151]">
           {t("pointOps.pointRef")}
           <input
             type="text"
@@ -633,8 +606,7 @@ export function CadCommandsPanel({
             className="mt-1 w-full rounded-lg border border-[#d1d5db] px-3 py-2 font-mono text-xs"
           />
         </label>
-
-        <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
+        <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
           <label className="block text-xs font-medium text-[#374151]">
             {t("pointOps.newName")}
             <input
@@ -645,17 +617,11 @@ export function CadCommandsPanel({
               className="mt-1 w-full rounded-lg border border-[#d1d5db] px-3 py-2 text-xs"
             />
           </label>
-          <button
-            type="button"
-            disabled={busy !== null}
-            onClick={applyRename}
-            className="mt-5 rounded-lg border border-[#7c3aed] px-2 py-2 text-xs font-medium text-[#7c3aed] hover:bg-[#faf5ff] disabled:opacity-50"
-          >
+          <button type="button" disabled={busy !== null} onClick={applyRename} className={`mt-5 ${BTN_OUTLINE}`}>
             {busy === "renameApply" ? "…" : t("pointOps.rename")}
           </button>
         </div>
-
-        <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
+        <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
           <label className="block text-xs font-medium text-[#374151]">
             {t("pointOps.newZ")}
             <input
@@ -667,35 +633,25 @@ export function CadCommandsPanel({
               className="mt-1 w-full rounded-lg border border-[#d1d5db] px-3 py-2 font-mono text-xs"
             />
           </label>
-          <button
-            type="button"
-            disabled={busy !== null}
-            onClick={applyElevation}
-            className="mt-5 rounded-lg bg-[#0f2848] px-2 py-2 text-xs font-medium text-white disabled:opacity-50"
-          >
+          <button type="button" disabled={busy !== null} onClick={applyElevation} className={`mt-5 ${BTN_PRIMARY}`}>
             {busy === "elevationApply" ? "…" : t("pointOps.applyZ")}
           </button>
         </div>
-
-        <button
-          type="button"
-          disabled={busy !== null}
-          onClick={deletePoint}
-          className="mt-3 w-full rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
-        >
+        <button type="button" disabled={busy !== null} onClick={deletePoint} className={`mt-3 w-full ${BTN_DANGER}`}>
           {busy === "deletePoint" ? t("working") : t("pointOps.delete")}
         </button>
-      </div>
-
-      <div className="mt-3 rounded-lg border border-[#e5e7eb] bg-white p-3">
-        <h4 className="text-xs font-semibold text-[#0f2848]">{t("distanceOps.title")}</h4>
-        <p className="mt-0.5 text-[10px] text-[#6b7280]">{t("distanceOps.hint")}</p>
-        <div className="mt-2 grid grid-cols-2 gap-2">
+      </section>
+    ),
+    distance: (
+      <section>
+        <h3 className="text-sm font-semibold text-[#0f2848]">{t("distanceOps.title")}</h3>
+        <p className="mt-1 text-xs text-[#6b7280]">{t("distanceOps.hint")}</p>
+        <div className="mt-3 grid grid-cols-2 gap-2">
           <button
             type="button"
             disabled={busy !== null || distancePickActive}
             onClick={startDistancePick}
-            className="rounded-lg border border-[#7c3aed] px-2 py-2 text-xs font-medium text-[#7c3aed] hover:bg-[#faf5ff] disabled:opacity-50"
+            className={BTN_OUTLINE}
           >
             {distancePickActive ? t("distanceOps.picking") : t("distanceOps.pickOnCanvas")}
           </button>
@@ -713,31 +669,27 @@ export function CadCommandsPanel({
                 "distanceApply",
               );
             }}
-            className="rounded-lg bg-[#7c3aed] px-2 py-2 text-xs font-semibold text-white disabled:opacity-50"
+            className={BTN_PRIMARY}
           >
             {busy === "distanceApply" ? "…" : t("buttons.distance")}
           </button>
         </div>
         {distancePickActive ? (
-          <button
-            type="button"
-            onClick={cancelDistancePick}
-            className="mt-2 w-full rounded-lg border border-[#d1d5db] px-2 py-1.5 text-xs text-[#6b7280] hover:bg-[#f9fafb]"
-          >
+          <button type="button" onClick={cancelDistancePick} className={`mt-2 w-full ${BTN_SECONDARY}`}>
             {t("distanceOps.cancelPick")}
           </button>
         ) : null}
-      </div>
-
-      <div className="mt-3 rounded-lg border border-[#e5e7eb] bg-white p-3">
-        <h4 className="text-xs font-semibold text-[#0f2848]">{t("areaOps.title")}</h4>
-        <p className="mt-0.5 text-[10px] text-[#6b7280]">{t("areaOps.hint")}</p>
-
+      </section>
+    ),
+    area: (
+      <section>
+        <h3 className="text-sm font-semibold text-[#0f2848]">{t("areaOps.title")}</h3>
+        <p className="mt-1 text-xs text-[#6b7280]">{t("areaOps.hint")}</p>
         {closedPolygons.length === 0 ? (
-          <p className="mt-2 text-xs text-amber-700">{t("areaOps.noPolygons")}</p>
+          <p className="mt-3 text-xs text-amber-700">{t("areaOps.noPolygons")}</p>
         ) : (
           <>
-            <label className="mt-2 block text-xs font-medium text-[#374151]">
+            <label className="mt-3 block text-xs font-medium text-[#374151]">
               {t("areaOps.polygonSelect")}
               <select
                 value={areaPolygonId}
@@ -752,13 +704,12 @@ export function CadCommandsPanel({
                 ))}
               </select>
             </label>
-
-            <div className="mt-2 grid grid-cols-2 gap-2">
+            <div className="mt-3 grid grid-cols-2 gap-2">
               <button
                 type="button"
                 disabled={busy !== null || areaPickActive}
                 onClick={startAreaPick}
-                className="rounded-lg border border-[#7c3aed] px-2 py-2 text-xs font-medium text-[#7c3aed] hover:bg-[#faf5ff] disabled:opacity-50"
+                className={BTN_OUTLINE}
               >
                 {areaPickActive ? t("areaOps.picking") : t("areaOps.pickOnCanvas")}
               </button>
@@ -766,59 +717,88 @@ export function CadCommandsPanel({
                 type="button"
                 disabled={busy !== null || !areaPolygonId}
                 onClick={applyArea}
-                className="rounded-lg bg-[#7c3aed] px-2 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                className={BTN_PRIMARY}
               >
                 {busy === "areaApply" ? "…" : t("areaOps.calculate")}
               </button>
             </div>
-
             {areaPickActive ? (
-              <button
-                type="button"
-                onClick={cancelAreaPick}
-                className="mt-2 w-full rounded-lg border border-[#d1d5db] px-2 py-1.5 text-xs text-[#6b7280] hover:bg-[#f9fafb]"
-              >
+              <button type="button" onClick={cancelAreaPick} className={`mt-2 w-full ${BTN_SECONDARY}`}>
                 {t("areaOps.cancelPick")}
               </button>
             ) : null}
           </>
         )}
-      </div>
+      </section>
+    ),
+    quick: (
+      <section>
+        <h3 className="text-sm font-semibold text-[#0f2848]">{t("tabs.quick")}</h3>
+        <p className="mt-1 text-xs text-[#6b7280]">{t("hint")}</p>
+        <label className="mt-3 block text-xs font-medium text-[#374151]">
+          {t("textLabel")}
+          <input
+            type="text"
+            value={labelText}
+            onChange={(e) => setLabelText(e.target.value)}
+            placeholder={t("textPlaceholder")}
+            className="mt-1 w-full rounded-lg border border-[#d1d5db] px-3 py-2 text-xs"
+          />
+        </label>
+        <div className="mt-3 grid grid-cols-1 gap-2">
+          {COMMAND_BUTTONS.map((btn) => (
+            <button
+              key={btn.id}
+              type="button"
+              disabled={busy !== null}
+              onClick={() => handleButton(btn)}
+              className={`${BTN_SECONDARY} text-left`}
+            >
+              {t(`buttons.${btn.labelKey}`, { defaultMessage: btn.labelKey })}
+            </button>
+          ))}
+        </div>
+        {onOpenAiChat ? (
+          <button type="button" onClick={onOpenAiChat} className={`mt-3 w-full ${BTN_OUTLINE}`}>
+            {tAi("openChat")}…
+          </button>
+        ) : null}
+      </section>
+    ),
+  };
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        {COMMAND_BUTTONS.map((btn) => (
+  if (variant === "profileOnly") {
+    return (
+      <div className="space-y-3">
+        {profileSection}
+        {statusMessages}
+      </div>
+    );
+  }
+
+  return (
+    <aside className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-[#e5e7eb] bg-white shadow-sm xl:max-h-[calc(100vh-12rem)]">
+      <div className="shrink-0 border-b border-[#e5e7eb] px-3 py-3">
+        <h3 className="text-sm font-semibold text-[#0f2848]">{t("title")}</h3>
+        <p className="mt-0.5 text-xs text-[#6b7280]">{t("hint")}</p>
+      </div>
+      <nav className="flex shrink-0 flex-col gap-1 overflow-y-auto border-b border-[#e5e7eb] p-2">
+        {COMMAND_TAB_ORDER.map((tab) => (
           <button
-            key={btn.id}
+            key={tab}
             type="button"
-            disabled={busy !== null}
-            onClick={() => handleButton(btn)}
-            className="rounded-lg border border-[#ddd6fe] bg-white px-2 py-2 text-left text-xs font-medium text-[#0f2848] transition hover:border-[#7c3aed] hover:bg-[#f5f3ff] disabled:opacity-50"
+            onClick={() => setActiveTab(tab)}
+            className={commandTabClass(activeTab === tab)}
           >
-            {t(`buttons.${btn.labelKey}`, { defaultMessage: btn.labelKey })}
+            {t(`tabs.${tab}`)}
           </button>
         ))}
+      </nav>
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
+        {tabSections[activeTab]}
+        {statusMessages}
       </div>
-
-      {onOpenAiChat ? (
-        <button
-          type="button"
-          onClick={onOpenAiChat}
-          className="mt-2 w-full rounded-lg border border-[#7c3aed] px-3 py-2 text-xs font-medium text-[#7c3aed] hover:bg-[#faf5ff]"
-        >
-          {tAi("openChat")}…
-        </button>
-      ) : null}
-
-      {notice ? <p className="mt-2 text-xs text-emerald-700">{notice}</p> : null}
-      {error ? <p className="mt-2 text-xs text-red-600">{error}</p> : null}
-
-      <input
-        ref={fileRef}
-        type="file"
-        accept={fileAccept}
-        className="hidden"
-        onChange={handleFile}
-      />
-    </section>
+      <input ref={fileRef} type="file" accept={fileAccept} className="hidden" onChange={handleFile} />
+    </aside>
   );
 }

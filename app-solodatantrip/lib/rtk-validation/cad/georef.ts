@@ -268,4 +268,15 @@ export function viewportBbox4326Georef(
   };
 }
 
+/** Bbox seguro para overlays — descarta valores não finitos. */
+export function viewportBbox4326GeorefSafe(
+  viewport: { minX: number; maxX: number; minY: number; maxY: number },
+  georef: CadGeorefContext,
+) {
+  const bbox = viewportBbox4326Georef(viewport, georef);
+  const finite = [bbox.minLon, bbox.minLat, bbox.maxLon, bbox.maxLat].every(Number.isFinite);
+  if (!finite || bbox.minLon >= bbox.maxLon || bbox.minLat >= bbox.maxLat) return null;
+  return bbox;
+}
+
 export { formatSirgasUtmProjection } from "@/lib/rtk-validation/project-coords";

@@ -9,7 +9,6 @@ const navKeys = [
   { href: "/area-cliente/credenciais" as const, key: "credentials" },
   { href: "/area-cliente/validacao-rtk" as const, key: "rtkValidation" },
   { href: "/area-cliente/cad" as const, key: "cadEnvironment" },
-  { href: "/area-cliente/fotogrametria" as const, key: "photogrammetry" },
   { href: "/area-cliente/uso" as const, key: "usage" },
   { href: "/area-cliente/pedidos" as const, key: "orders" },
   { href: "/area-cliente/assinatura" as const, key: "subscription" },

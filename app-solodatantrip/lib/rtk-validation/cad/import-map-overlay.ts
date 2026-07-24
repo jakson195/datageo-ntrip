@@ -7,15 +7,7 @@ import { createCadGeorefContext, type CadGeorefContext } from "./georef";
 import { latLonToVertexGeoref } from "./georef";
 import type { CadEntity, CadLayer, CadPolylineEntity, CadVertex } from "./types";
 
-export type OverlayImportSource = "anm" | "hidro" | "sicar";
-
-export const SICAR_CAD_LAYER: CadLayer = {
-  id: "car_sicar",
-  name: "CAR/SICAR",
-  color: "#22c55e",
-  visible: true,
-  locked: true,
-};
+export type OverlayImportSource = "anm";
 
 export function cadLayerForAnmKey(key: AnmSigmineLayerKey): CadLayer {
   const def = ANM_SIGMINE_LAYERS[key];
@@ -27,23 +19,6 @@ export function cadLayerForAnmKey(key: AnmSigmineLayerKey): CadLayer {
     locked: true,
   };
 }
-
-export const OVERLAY_LAYER_DEFS: Record<OverlayImportSource, CadLayer> = {
-  anm: {
-    id: ANM_SIGMINE_LAYERS.processos.cadLayerId,
-    name: "ANM SIGMINE",
-    color: ANM_SIGMINE_LAYERS.processos.color,
-    visible: true,
-    locked: true,
-  },
-  hidro: {
-    id: "hidro_cursos",
-    name: "Cursos d'água",
-    color: "#3b82f6",
-    visible: true,
-    locked: true,
-  },
-};
 
 function newOverlayId(prefix: string) {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
@@ -167,17 +142,6 @@ export function geoJsonToOverlayEntities(
   return entities;
 }
 
-/** @deprecated use geoJsonToOverlayEntities with explicit layerId */
-export function geoJsonToAnmOverlayEntities(
-  collection: GeoJSON.FeatureCollection,
-  source: OverlayImportSource,
-  georef: CadGeorefContext | number = 23,
-): CadEntity[] {
-  const layerId = OVERLAY_LAYER_DEFS[source].id;
-  const prefix = source === "anm" ? "anm" : "hid";
-  return geoJsonToOverlayEntities(collection, layerId, prefix, georef);
-}
-
 export function mergeOverlayImport(
   projectLayers: CadLayer[],
   projectEntities: CadEntity[],
@@ -191,16 +155,6 @@ export function mergeOverlayImport(
     ...imported,
   ];
   return { layers, entities };
-}
-
-/** @deprecated use mergeOverlayImport with explicit layerDef */
-export function mergeOverlayImportLegacy(
-  projectLayers: CadLayer[],
-  projectEntities: CadEntity[],
-  source: OverlayImportSource,
-  imported: CadEntity[],
-): { layers: CadLayer[]; entities: CadEntity[] } {
-  return mergeOverlayImport(projectLayers, projectEntities, OVERLAY_LAYER_DEFS[source], imported);
 }
 
 export function mergeAnmLayerImport(
@@ -222,38 +176,4 @@ export function bboxToEnvelopeJson(bbox: Bbox4326) {
     ymax: maxLat,
     spatialReference: { wkid: 4326 },
   });
-}
-
-export async function queryArcGisGeoJson(
-  queryLayerUrl: string,
-  bbox: Bbox4326,
-  outFields = "OBJECTID",
-): Promise<GeoJSON.FeatureCollection | null> {
-  const url = new URL(`${queryLayerUrl.replace(/\/$/, "")}/query`);
-  url.searchParams.set("geometry", bboxToEnvelopeJson(bbox));
-  url.searchParams.set("geometryType", "esriGeometryEnvelope");
-  url.searchParams.set("inSR", "4326");
-  url.searchParams.set("outSR", "4326");
-  url.searchParams.set("spatialRel", "esriSpatialRelIntersects");
-  url.searchParams.set("returnGeometry", "true");
-  if (outFields) url.searchParams.set("outFields", outFields);
-  url.searchParams.set("f", "geojson");
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 45_000);
-  try {
-    const res = await fetch(url.toString(), { signal: controller.signal, cache: "no-store" });
-    if (!res.ok) return null;
-
-    const data = (await res.json()) as GeoJSON.FeatureCollection & {
-      error?: { message?: string };
-    };
-    if (data?.error) return null;
-    if (!data || !Array.isArray(data.features)) return null;
-    return data;
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timer);
-  }
 }

@@ -26,10 +26,35 @@ export function isBboxInBrazil(bbox: {
   maxLat: number;
 }): boolean {
   return (
+    Number.isFinite(bbox.minLon) &&
+    Number.isFinite(bbox.minLat) &&
+    Number.isFinite(bbox.maxLon) &&
+    Number.isFinite(bbox.maxLat) &&
     bbox.minLat >= -35 &&
     bbox.maxLat <= 6 &&
     bbox.minLon >= -75 &&
     bbox.maxLon <= -30
+  );
+}
+
+/** Bbox WGS84 válido para consultas de mapa (evita Infinity após zoom extremo). */
+export function isValidMapBbox4326(bbox: {
+  minLon: number;
+  minLat: number;
+  maxLon: number;
+  maxLat: number;
+}): boolean {
+  return (
+    Number.isFinite(bbox.minLon) &&
+    Number.isFinite(bbox.minLat) &&
+    Number.isFinite(bbox.maxLon) &&
+    Number.isFinite(bbox.maxLat) &&
+    bbox.minLon < bbox.maxLon &&
+    bbox.minLat < bbox.maxLat &&
+    bbox.minLon >= -180 &&
+    bbox.maxLon <= 180 &&
+    bbox.minLat >= -90 &&
+    bbox.maxLat <= 90
   );
 }
 

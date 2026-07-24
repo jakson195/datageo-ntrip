@@ -9,8 +9,10 @@ import {
   latLonToVertexGeoref,
   vertexToEn,
   viewportBbox4326Georef,
+  viewportBbox4326GeorefSafe,
   type CadGeorefContext,
 } from "@/lib/rtk-validation/cad/georef";
+import { isBboxInBrazil } from "@/lib/rtk-validation/cad/map-bbox";
 import {
   latLonToTileXY,
   pickTileZoom,
@@ -31,16 +33,12 @@ export type { AnmSigmineLayerKey, AnmSigmineOverlayState };
 
 export type CadBasemapOverlays = {
   satellite: boolean;
-  car: boolean;
   anmSigmine: AnmSigmineOverlayState;
-  hidro: boolean;
 };
 
 export const DEFAULT_CAD_BASEMAP_OVERLAYS: CadBasemapOverlays = {
   satellite: false,
-  car: false,
   anmSigmine: { ...DEFAULT_ANM_SIGMINE_OVERLAY },
-  hidro: false,
 };
 
 type CadBasemapLayerProps = {
@@ -49,16 +47,6 @@ type CadBasemapLayerProps = {
   overlays: CadBasemapOverlays;
   crs?: string;
   georef?: CadGeorefContext;
-};
-
-type OverlayKey = "car" | "hidro";
-
-const OVERLAY_CONFIG: Record<
-  OverlayKey,
-  { apiPath: string; opacity: number; zIndex: number }
-> = {
-  car: { apiPath: "/api/cad-map/car", opacity: 0.92, zIndex: 1 },
-  hidro: { apiPath: "/api/cad-map/hidro", opacity: 0.9, zIndex: 4 },
 };
 
 const ANM_OVERLAY = { apiPath: "/api/cad-map/anm", opacity: 0.88, zIndex: 2 };
@@ -155,28 +143,17 @@ function WmsOverlayImage({
 
 export function CadBasemapLayer({ viewport, entities, overlays, crs, georef: georefProp }: CadBasemapLayerProps) {
   const t = useTranslations("rtkCad.basemap");
-  const [failed, setFailed] = useState<Record<OverlayKey, boolean>>({
-    car: false,
-    hidro: false,
-  });
-  const [anmFailed, setAnmFailed] = useState(false);
+  const [anmFailed, setAnmFailed] = useState<"error" | "empty" | "outOfBrazil" | null>(null);
+  const [anmImageUrl, setAnmImageUrl] = useState<string | null>(null);
   const [satelliteFailed, setSatelliteFailed] = useState(false);
 
-  const activeKeys = (Object.keys(OVERLAY_CONFIG) as OverlayKey[]).filter((k) => overlays[k]);
   const anmActive = anyAnmSigmineOverlay(overlays.anmSigmine);
 
   useEffect(() => {
-    if (activeKeys.length === 0 && !anmActive && !overlays.satellite) return;
-    setFailed((prev) => {
-      const next = { ...prev };
-      for (const key of activeKeys) next[key] = false;
-      return next;
-    });
-    if (anmActive) setAnmFailed(false);
+    if (!anmActive && !overlays.satellite) return;
+    if (anmActive) setAnmFailed(null);
     if (overlays.satellite) setSatelliteFailed(false);
   }, [
-    overlays.car,
-    overlays.hidro,
     overlays.anmSigmine.processos,
     overlays.anmSigmine.protecaoFonte,
     overlays.anmSigmine.arrendamentos,
@@ -194,28 +171,95 @@ export function CadBasemapLayer({ viewport, entities, overlays, crs, georef: geo
     [georefProp, entities, viewport.minX, viewport.maxX, viewport.minY, viewport.maxY, crs],
   );
 
-  const mapUrls = useMemo(() => {
-    if (!georef.isGeoreferenced) {
-      return { car: null, anm: null, hidro: null };
-    }
-    const bbox = viewportBbox4326Georef(viewport, georef);
+  const anmBboxIssue = useMemo(() => {
+    if (!anmActive || !georef.isGeoreferenced) return null;
+    const bbox = viewportBbox4326GeorefSafe(viewport, georef);
+    if (!bbox || !isBboxInBrazil(bbox)) return "outOfBrazil" as const;
+    return null;
+  }, [anmActive, georef, viewport.minX, viewport.maxX, viewport.minY, viewport.maxY]);
+
+  const anmMapUrl = useMemo(() => {
+    if (!georef.isGeoreferenced || !anmActive || anmBboxIssue) return null;
+    const bbox = viewportBbox4326GeorefSafe(viewport, georef);
+    if (!bbox) return null;
     const w = Math.min(1600, Math.max(512, Math.round(viewport.width * 2)));
     const h = Math.min(1600, Math.max(512, Math.round(viewport.height * 2)));
     const bboxStr = [bbox.minLon, bbox.minLat, bbox.maxLon, bbox.maxLat]
       .map((n) => n.toFixed(6))
       .join(",");
-
     const anmLayerIds = activeAnmMapLayerIds(overlays.anmSigmine);
+    if (anmLayerIds.length === 0) return null;
+    return buildMapUrl(ANM_OVERLAY.apiPath, bboxStr, w, h, { layers: anmLayerIds.join(",") });
+  }, [overlays.anmSigmine, viewport, georef, anmActive, anmBboxIssue]);
 
-    return {
-      car: overlays.car ? buildMapUrl(OVERLAY_CONFIG.car.apiPath, bboxStr, w, h) : null,
-      anm:
-        anmLayerIds.length > 0
-          ? buildMapUrl(ANM_OVERLAY.apiPath, bboxStr, w, h, { layers: anmLayerIds.join(",") })
-          : null,
-      hidro: overlays.hidro ? buildMapUrl(OVERLAY_CONFIG.hidro.apiPath, bboxStr, w, h) : null,
+  useEffect(() => {
+    if (!anmMapUrl || !anmActive || !georef.isGeoreferenced) {
+      setAnmImageUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+      return;
+    }
+
+    let cancelled = false;
+    setAnmFailed(null);
+
+    void fetch(anmMapUrl)
+      .then(async (res) => {
+        if (cancelled) return;
+        if (res.status === 404) {
+          setAnmFailed("empty");
+          setAnmImageUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return null;
+          });
+          return;
+        }
+        if (res.status === 400) {
+          setAnmFailed("outOfBrazil");
+          setAnmImageUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return null;
+          });
+          return;
+        }
+        if (!res.ok) {
+          setAnmFailed("error");
+          setAnmImageUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return null;
+          });
+          return;
+        }
+        const blob = await res.blob();
+        if (cancelled) return;
+        const objectUrl = URL.createObjectURL(blob);
+        setAnmImageUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return objectUrl;
+        });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAnmFailed("error");
+          setAnmImageUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return null;
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
     };
-  }, [overlays, viewport, georef, entities]);
+  }, [anmMapUrl, anmActive, georef.isGeoreferenced]);
+
+  useEffect(
+    () => () => {
+      if (anmImageUrl) URL.revokeObjectURL(anmImageUrl);
+    },
+    [anmImageUrl],
+  );
 
   const satelliteTiles = useMemo(() => {
     if (!overlays.satellite || !georef.isGeoreferenced) return [];
@@ -238,7 +282,7 @@ export function CadBasemapLayer({ viewport, entities, overlays, crs, georef: geo
       );
   }, [overlays.satellite, viewport, georef]);
 
-  if (!overlays.car && !anmActive && !overlays.hidro && !overlays.satellite) return null;
+  if (!anmActive && !overlays.satellite) return null;
 
   const viewW = viewport.width;
   const viewH = viewport.height;
@@ -283,54 +327,35 @@ export function CadBasemapLayer({ viewport, entities, overlays, crs, georef: geo
         </div>
       ) : null}
 
-      {(Object.keys(OVERLAY_CONFIG) as OverlayKey[]).map((key) => {
-        if (!overlays[key] || !mapUrls[key] || failed[key] || !georef.isGeoreferenced) return null;
-        const cfg = OVERLAY_CONFIG[key];
-        return (
-          <WmsOverlayImage
-            key={key}
-            url={mapUrls[key]!}
-            style={{ ...wmsStyle, zIndex: cfg.zIndex }}
-            opacity={cfg.opacity}
-            onFailed={() => setFailed((prev) => ({ ...prev, [key]: true }))}
-          />
-        );
-      })}
-
-      {anmActive && mapUrls.anm && !anmFailed && georef.isGeoreferenced ? (
-        <WmsOverlayImage
-          key="anm-sigmine"
-          url={mapUrls.anm}
-          style={{ ...wmsStyle, zIndex: ANM_OVERLAY.zIndex }}
-          opacity={ANM_OVERLAY.opacity}
-          onFailed={() => setAnmFailed(true)}
-        />
-      ) : null}
-
-      {(Object.keys(OVERLAY_CONFIG) as OverlayKey[]).map((key) => {
-        if (!overlays[key] || !failed[key]) return null;
-        return (
-          <div
-            key={`${key}-err`}
-            className="absolute rounded bg-amber-600/90 px-2 py-1 text-[10px] text-white"
-            style={{
-              pointerEvents: "none",
-              left: 8,
-              top: key === "car" ? 8 : 48,
-              zIndex: 20,
-            }}
-          >
-            {t(`${key}Unavailable`)}
-          </div>
-        );
-      })}
-
-      {anmActive && anmFailed ? (
+      {anmActive && !georef.isGeoreferenced ? (
         <div
           className="absolute left-2 top-7 z-20 rounded bg-amber-600/90 px-2 py-1 text-[10px] text-white"
           style={{ pointerEvents: "none" }}
         >
-          {t("anmUnavailable")}
+          {t("needGeoref")}
+        </div>
+      ) : null}
+
+      {anmActive && anmImageUrl && !anmFailed && !anmBboxIssue && georef.isGeoreferenced ? (
+        <WmsOverlayImage
+          key="anm-sigmine"
+          url={anmImageUrl}
+          style={{ ...wmsStyle, zIndex: ANM_OVERLAY.zIndex }}
+          opacity={ANM_OVERLAY.opacity}
+          onFailed={() => setAnmFailed("error")}
+        />
+      ) : null}
+
+      {anmActive && (anmFailed || anmBboxIssue) ? (
+        <div
+          className="absolute left-2 top-7 z-20 max-w-[240px] rounded bg-amber-600/90 px-2 py-1 text-[10px] leading-snug text-white"
+          style={{ pointerEvents: "none" }}
+        >
+          {anmBboxIssue === "outOfBrazil" || anmFailed === "outOfBrazil"
+            ? t("anmOutOfBrazil")
+            : anmFailed === "empty"
+              ? t("anmEmpty")
+              : t("anmUnavailable")}
         </div>
       ) : null}
     </div>
@@ -341,9 +366,7 @@ export function CadBasemapAttribution({ overlays }: { overlays: CadBasemapOverla
   const t = useTranslations("rtkCad.basemap");
   const labels: string[] = [];
   if (overlays.satellite) labels.push(t("satelliteCredit"));
-  if (overlays.car) labels.push(t("carCredit"));
   if (anyAnmSigmineOverlay(overlays.anmSigmine)) labels.push(t("anmCredit"));
-  if (overlays.hidro) labels.push(t("hidroCredit"));
   if (labels.length === 0) return null;
 
   return (
