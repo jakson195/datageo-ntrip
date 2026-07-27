@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { runQueuedInEffect } from "@/lib/react/queue-in-effect";
 import { PageHeading } from "@/components/dashboard/page-heading";
 import type { ClientPaymentHistoryItem } from "@/lib/billing/client-types";
 
@@ -32,9 +33,7 @@ export default function PedidosPage() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => runQueuedInEffect(() => void load()), [load]);
 
   return (
     <main className="flex-1 bg-[#f3f4f6] p-4 sm:p-8">

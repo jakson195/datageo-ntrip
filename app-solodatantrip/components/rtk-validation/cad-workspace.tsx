@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { runQueuedInEffect } from "@/lib/react/queue-in-effect";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import {
@@ -359,19 +360,23 @@ export function CadWorkspace({ userId }: { userId: string }) {
     [project, bounds.minX, bounds.maxX, bounds.minY, bounds.maxY],
   );
 
-  useEffect(() => {
-    if (!projectGeoref.isGeoreferenced) return;
-    setMemorialForm((prev) => {
-      const trimmed = prev.projectionNote.trim();
-      const isGeneric =
-        !trimmed ||
-        trimmed === DEFAULT_MEMORIAL_FOOTER.projectionNote ||
-        trimmed.toLowerCase() === "plano de projeção utm";
-      if (!isGeneric) return prev;
-      if (prev.projectionNote === projectGeoref.utmProjectionLabel) return prev;
-      return { ...prev, projectionNote: projectGeoref.utmProjectionLabel };
-    });
-  }, [projectGeoref.isGeoreferenced, projectGeoref.utmProjectionLabel]);
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (!projectGeoref.isGeoreferenced) return;
+        setMemorialForm((prev) => {
+          const trimmed = prev.projectionNote.trim();
+          const isGeneric =
+            !trimmed ||
+            trimmed === DEFAULT_MEMORIAL_FOOTER.projectionNote ||
+            trimmed.toLowerCase() === "plano de projeção utm";
+          if (!isGeneric) return prev;
+          if (prev.projectionNote === projectGeoref.utmProjectionLabel) return prev;
+          return { ...prev, projectionNote: projectGeoref.utmProjectionLabel };
+        });
+      }),
+    [projectGeoref.isGeoreferenced, projectGeoref.utmProjectionLabel],
+  );
 
   const handleImportOverlay = useCallback(
     async (source: OverlayImportSource, anmLayer?: AnmSigmineLayerKey) => {
@@ -480,11 +485,15 @@ export function CadWorkspace({ userId }: { userId: string }) {
     );
   }, [pickablePoints, pointSearch]);
 
-  useEffect(() => {
-    if (pickablePoints.length === 0) {
-      setSnapToRtkPoints(false);
-    }
-  }, [pickablePoints.length]);
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (pickablePoints.length === 0) {
+          setSnapToRtkPoints(false);
+        }
+      }),
+    [pickablePoints.length],
+  );
 
   useEffect(() => {
     if (!polygonEditNotice) return;
@@ -492,25 +501,30 @@ export function CadWorkspace({ userId }: { userId: string }) {
     return () => window.clearTimeout(timer);
   }, [polygonEditNotice]);
 
-  useEffect(() => {
-    setSelectedVertexIndex(null);
-  }, [selectedId, tool]);
+  useEffect(
+    () => runQueuedInEffect(() => setSelectedVertexIndex(null)),
+    [selectedId, tool],
+  );
 
-  useEffect(() => {
-    if (!selectedId || selectedVertexIndex === null) {
-      setVertexEditE("");
-      setVertexEditN("");
-      setVertexEditZ("");
-      return;
-    }
-    const entity = project.entities.find((e) => e.id === selectedId);
-    if (entity?.type !== "polyline") return;
-    const vertex = entity.vertices[selectedVertexIndex];
-    if (!vertex) return;
-    setVertexEditE(vertex.x.toFixed(4));
-    setVertexEditN(vertex.y.toFixed(4));
-    setVertexEditZ(vertex.z.toFixed(4));
-  }, [selectedId, selectedVertexIndex, project.entities]);
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (!selectedId || selectedVertexIndex === null) {
+          setVertexEditE("");
+          setVertexEditN("");
+          setVertexEditZ("");
+          return;
+        }
+        const entity = project.entities.find((e) => e.id === selectedId);
+        if (entity?.type !== "polyline") return;
+        const vertex = entity.vertices[selectedVertexIndex];
+        if (!vertex) return;
+        setVertexEditE(vertex.x.toFixed(4));
+        setVertexEditN(vertex.y.toFixed(4));
+        setVertexEditZ(vertex.z.toFixed(4));
+      }),
+    [selectedId, selectedVertexIndex, project.entities],
+  );
 
   function isEditablePolyline(entity: CadPolylineEntity): boolean {
     const layer = layerMap.get(entity.layerId);
@@ -608,12 +622,16 @@ export function CadWorkspace({ userId }: { userId: string }) {
     setDrawPreview(resolveClickVertex(sx, sy));
   }
 
-  useEffect(() => {
-    if (!isDrawTool || !drawReference || !keyboardDistance.trim()) return;
-    const typed = parseDrawNumber(keyboardDistance);
-    if (typed === null || typed <= 0) return;
-    setDrawPreview(vertexFromDistance(drawReference, typed, resolveDrawAzimuth(), orthogonalMode));
-  }, [keyboardDistance, drawReference, orthogonalMode, polarAngle, isDrawTool, draft.length]);
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (!isDrawTool || !drawReference || !keyboardDistance.trim()) return;
+        const typed = parseDrawNumber(keyboardDistance);
+        if (typed === null || typed <= 0) return;
+        setDrawPreview(vertexFromDistance(drawReference, typed, resolveDrawAzimuth(), orthogonalMode));
+      }),
+    [keyboardDistance, drawReference, orthogonalMode, polarAngle, isDrawTool, draft.length],
+  );
 
   function resolveDrawAzimuth(): number {
     const typedAngle = polarAngle.trim() ? parseDrawNumber(polarAngle) : null;
@@ -941,9 +959,7 @@ export function CadWorkspace({ userId }: { userId: string }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [activeTab, isDrawTool, drawReference, keyboardDistance, orthogonalMode, polarAngle]);
 
-  useEffect(() => {
-    setMemorialForm(loadMemorialFormDefaults());
-  }, []);
+  useEffect(() => runQueuedInEffect(() => setMemorialForm(loadMemorialFormDefaults())), []);
 
   const patchMemorialForm = useCallback((patch: Partial<MemorialFormDefaults>) => {
     setMemorialForm((prev) => {
@@ -957,39 +973,51 @@ export function CadWorkspace({ userId }: { userId: string }) {
     setViewBounds(computeViewportBoundsSafe(project.entities));
   }, [project.entities]);
 
-  useEffect(() => {
-    if (!viewBounds && project.entities.length > 0) {
-      setViewBounds(computeViewportBoundsSafe(project.entities));
-    }
-  }, [project.entities, viewBounds]);
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (!viewBounds && project.entities.length > 0) {
+          setViewBounds(computeViewportBoundsSafe(project.entities));
+        }
+      }),
+    [project.entities, viewBounds],
+  );
 
   /** Corrige zoom distorcido (ex.: após gerar perfil distância×cota). */
-  useEffect(() => {
-    if (project.entities.length === 0) return;
-    const safe = computeViewportBoundsSafe(project.entities);
-    setViewBounds((prev) => {
-      if (!prev) return safe;
-      const prevSpan = Math.max(prev.maxX - prev.minX, prev.maxY - prev.minY);
-      const safeSpan = Math.max(safe.maxX - safe.minX, safe.maxY - safe.minY);
-      if (safeSpan > 0 && prevSpan > safeSpan * 100) return safe;
-      return prev;
-    });
-  }, [project.entities]);
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (project.entities.length === 0) return;
+        const safe = computeViewportBoundsSafe(project.entities);
+        setViewBounds((prev) => {
+          if (!prev) return safe;
+          const prevSpan = Math.max(prev.maxX - prev.minX, prev.maxY - prev.minY);
+          const safeSpan = Math.max(safe.maxX - safe.minX, safe.maxY - safe.minY);
+          if (safeSpan > 0 && prevSpan > safeSpan * 100) return safe;
+          return prev;
+        });
+      }),
+    [project.entities],
+  );
 
-  useEffect(() => {
-    if (!selectedId) {
-      setPointEditZ("");
-      setPointActionNotice(null);
-      return;
-    }
-    const pt = project.entities.find((e) => e.id === selectedId && e.type === "point");
-    if (pt && pt.type === "point") {
-      setPointEditZ(pt.z.toFixed(4));
-    } else {
-      setPointEditZ("");
-    }
-    setPointActionNotice(null);
-  }, [selectedId, project.entities]);
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (!selectedId) {
+          setPointEditZ("");
+          setPointActionNotice(null);
+          return;
+        }
+        const pt = project.entities.find((e) => e.id === selectedId && e.type === "point");
+        if (pt && pt.type === "point") {
+          setPointEditZ(pt.z.toFixed(4));
+        } else {
+          setPointEditZ("");
+        }
+        setPointActionNotice(null);
+      }),
+    [selectedId, project.entities],
+  );
 
   function toggleLayer(layerId: string) {
     setProject((prev) => ({

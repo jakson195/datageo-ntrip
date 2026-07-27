@@ -6,6 +6,7 @@ import { useState } from "react";
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [devResetUrl, setDevResetUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -13,6 +14,7 @@ export function ForgotPasswordForm() {
     e.preventDefault();
     setError(null);
     setMessage(null);
+    setDevResetUrl(null);
     setLoading(true);
 
     try {
@@ -21,7 +23,11 @@ export function ForgotPasswordForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      const data = (await res.json()) as { error?: string; message?: string };
+      const data = (await res.json()) as {
+        error?: string;
+        message?: string;
+        devResetUrl?: string;
+      };
 
       if (!res.ok) {
         setError(data.error ?? "Não foi possível enviar o pedido.");
@@ -32,6 +38,9 @@ export function ForgotPasswordForm() {
         data.message ??
           "Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha.",
       );
+      if (data.devResetUrl) {
+        setDevResetUrl(data.devResetUrl);
+      }
     } catch {
       setError("Erro de conexão. Tente novamente.");
     } finally {
@@ -67,6 +76,18 @@ export function ForgotPasswordForm() {
         <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
           {message}
         </p>
+      ) : null}
+      {devResetUrl ? (
+        <div className="space-y-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-4 text-sm text-blue-900">
+          <p className="font-medium">Ambiente local — clique para redefinir sua senha:</p>
+          <a
+            href={devResetUrl}
+            className="inline-flex w-full items-center justify-center rounded-xl bg-[#1d6ecf] px-4 py-3 text-sm font-semibold text-white hover:bg-[#1558a8]"
+          >
+            Abrir página de nova senha
+          </a>
+          <p className="break-all text-xs text-blue-800/80">{devResetUrl}</p>
+        </div>
       ) : null}
 
       <button

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createHash, randomBytes } from "crypto";
-import { prisma } from "@/lib/db/prisma";
+import { ensurePrismaConnected, prisma } from "@/lib/db/prisma";
 import { userRepository } from "@/lib/db/repositories/user.repository";
 import { hashPassword } from "@/lib/password";
 import { validateEmail, validatePassword } from "@/lib/password-validation";
@@ -50,11 +50,18 @@ async function sendResetEmail(email: string, name: string, resetUrl: string) {
 
 export async function requestPasswordReset(
   email: string,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<
+  { ok: true; devResetUrl?: string } | { ok: false; error: string }
+> {
   const emailCheck = validateEmail(email);
   if (!emailCheck.ok) return emailCheck;
 
-  const user = await userRepository.findByEmail(email.trim().toLowerCase());
+  await ensurePrismaConnected();
+
+  const user = await prisma.user.findFirst({
+    where: { email: email.trim().toLowerCase(), deletedAt: null },
+    select: { id: true, email: true, name: true },
+  });
   if (!user) {
     return { ok: true };
   }
@@ -79,7 +86,10 @@ export async function requestPasswordReset(
   const resetUrl = `${appBaseUrl()}/redefinir-senha?token=${rawToken}`;
   await sendResetEmail(user.email, user.name, resetUrl);
 
-  return { ok: true };
+  const webhook = process.env.BILLING_NOTIFICATION_WEBHOOK_URL?.trim();
+  const exposeDevLink = !webhook && process.env.NODE_ENV !== "production";
+
+  return { ok: true, devResetUrl: exposeDevLink ? resetUrl : undefined };
 }
 
 export async function resetPasswordWithToken(
@@ -88,6 +98,8 @@ export async function resetPasswordWithToken(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const passwordCheck = validatePassword(newPassword);
   if (!passwordCheck.ok) return passwordCheck;
+
+  await ensurePrismaConnected();
 
   const trimmed = token.trim();
   if (!trimmed) {
@@ -126,6 +138,8 @@ export async function changeAccountPassword(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const passwordCheck = validatePassword(newPassword);
   if (!passwordCheck.ok) return passwordCheck;
+
+  await ensurePrismaConnected();
 
   const user = await userRepository.findByIdWithPassword(userId);
   if (!user) {

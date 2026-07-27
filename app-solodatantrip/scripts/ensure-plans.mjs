@@ -66,5 +66,8 @@ async function main() {
 
 main().catch((error) => {
   console.error("[ensure-plans]", error);
-  process.exit(1);
+  if (process.env.VERCEL === "1") {
+    process.exit(1);
+  }
+  console.warn("[ensure-plans] Banco indisponível — continuando dev local.");
 });

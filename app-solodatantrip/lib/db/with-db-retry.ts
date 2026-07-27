@@ -19,7 +19,8 @@ export function isTransientDbError(error: unknown): boolean {
       message.includes("timeout") ||
       message.includes("econnrefused") ||
       message.includes("connection terminated") ||
-      message.includes("can't reach database")
+      message.includes("can't reach database") ||
+      message.includes("closed")
     );
   }
 

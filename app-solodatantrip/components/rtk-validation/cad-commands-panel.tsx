@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { runQueuedInEffect } from "@/lib/react/queue-in-effect";
 import { useTranslations } from "next-intl";
 import { executeCadAiCommand, importKmzIntoProject } from "@/lib/rtk-validation/cad/ai-command-executor";
 import { importSurveyPointsToProject } from "@/lib/rtk-validation/cad/import-survey-points";
@@ -140,50 +141,74 @@ export function CadCommandsPanel({
     [project.entities],
   );
 
-  useEffect(() => {
-    if (!selectedId) return;
-    if (closedPolygons.some((p) => p.id === selectedId)) {
-      setAreaPolygonId(selectedId);
-    }
-  }, [selectedId, closedPolygons]);
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (!selectedId) return;
+        if (closedPolygons.some((p) => p.id === selectedId)) {
+          setAreaPolygonId(selectedId);
+        }
+      }),
+    [selectedId, closedPolygons],
+  );
 
-  useEffect(() => {
-    if (areaPickResult) {
-      setNotice(areaPickResult);
-      onClearAreaPickResult?.();
-    }
-  }, [areaPickResult, onClearAreaPickResult]);
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (areaPickResult) {
+          setNotice(areaPickResult);
+          onClearAreaPickResult?.();
+        }
+      }),
+    [areaPickResult, onClearAreaPickResult],
+  );
 
-  useEffect(() => {
-    if (distancePickResult) {
-      setNotice(distancePickResult);
-      onClearDistancePickResult?.();
-    }
-  }, [distancePickResult, onClearDistancePickResult]);
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (distancePickResult) {
+          setNotice(distancePickResult);
+          onClearDistancePickResult?.();
+        }
+      }),
+    [distancePickResult, onClearDistancePickResult],
+  );
 
-  useEffect(() => {
-    if (profilePickResult) {
-      setNotice(profilePickResult);
-      setPendingProfileStart(null);
-      onClearProfilePickResult?.();
-    }
-  }, [profilePickResult, onClearProfilePickResult]);
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (profilePickResult) {
+          setNotice(profilePickResult);
+          setPendingProfileStart(null);
+          onClearProfilePickResult?.();
+        }
+      }),
+    [profilePickResult, onClearProfilePickResult],
+  );
 
-  useEffect(() => {
-    if (selectedPoint) {
-      setPointRef(selectedPoint.label ?? selectedPoint.id);
-      setElevationZ(selectedPoint.z.toFixed(4));
-      if (!profileStart) setProfileStart(selectedPoint.label ?? selectedPoint.id);
-    }
-  }, [selectedPoint, profileStart]);
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (selectedPoint) {
+          setPointRef(selectedPoint.label ?? selectedPoint.id);
+          setElevationZ(selectedPoint.z.toFixed(4));
+          if (!profileStart) setProfileStart(selectedPoint.label ?? selectedPoint.id);
+        }
+      }),
+    [selectedPoint, profileStart],
+  );
 
-  useEffect(() => {
-    if (selectedPoint && !createPointE && !createPointN) {
-      setCreatePointE(selectedPoint.x.toFixed(3));
-      setCreatePointN(selectedPoint.y.toFixed(3));
-      setCreatePointZ(selectedPoint.z.toFixed(4));
-    }
-  }, [selectedPoint, createPointE, createPointN]);
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (selectedPoint && !createPointE && !createPointN) {
+          setCreatePointE(selectedPoint.x.toFixed(3));
+          setCreatePointN(selectedPoint.y.toFixed(3));
+          setCreatePointZ(selectedPoint.z.toFixed(4));
+        }
+      }),
+    [selectedPoint, createPointE, createPointN],
+  );
 
   useEffect(() => {
     return () => setBusy(null);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { runQueuedInEffect } from "@/lib/react/queue-in-effect";
 import type { LocationMapStyle } from "@/lib/cad-map/location-map-image";
 import { isLocationMapBoundsValid } from "@/lib/cad-map/location-map-image";
 
@@ -69,22 +70,26 @@ export function useLocationMapImage({
     ],
   );
 
-  useEffect(() => {
-    if (!enabled) {
-      setPrintImageUrl(null);
-      setStatus("idle");
-      return;
-    }
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (!enabled) {
+          setPrintImageUrl(null);
+          setStatus("idle");
+          return;
+        }
 
-    if (!boundsValid) {
-      setPrintImageUrl(null);
-      setStatus("needs_georef");
-      return;
-    }
+        if (!boundsValid) {
+          setPrintImageUrl(null);
+          setStatus("needs_georef");
+          return;
+        }
 
-    setStatus("loading");
-    setPrintImageUrl(null);
-  }, [apiUrl, enabled, boundsValid]);
+        setStatus("loading");
+        setPrintImageUrl(null);
+      }),
+    [apiUrl, enabled, boundsValid],
+  );
 
   const handleImageLoad = useCallback(() => {
     setStatus("ready");

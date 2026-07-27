@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { runQueuedInEffect } from "@/lib/react/queue-in-effect";
 import { useTranslations } from "next-intl";
 import type { ControlPointWithStats, SurveyPoint } from "@/lib/rtk-validation/types";
 import { latLonToEn, surveyCenterLatLon } from "@/lib/rtk-validation/project-coords";
@@ -68,42 +69,46 @@ export function PointsMap({
     [bases, center.zone],
   );
 
-  useEffect(() => {
-    if (!ntripServer || surveyEn.length === 0) {
-      setBases([]);
-      return;
-    }
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (!ntripServer || surveyEn.length === 0) {
+          setBases([]);
+          return;
+        }
 
-    const controller = new AbortController();
-    setBasesLoading(true);
-    setBasesError(null);
+        const controller = new AbortController();
+        setBasesLoading(true);
+        setBasesError(null);
 
-    const params = new URLSearchParams({
-      lat: String(center.lat),
-      lon: String(center.lon),
-      server: ntripServer,
-      port: ntripPort,
-      radius: "250",
-      limit: "35",
-    });
+        const params = new URLSearchParams({
+          lat: String(center.lat),
+          lon: String(center.lon),
+          server: ntripServer,
+          port: ntripPort,
+          radius: "250",
+          limit: "35",
+        });
 
-    fetch(`/api/rtk-validation/ntrip-bases?${params}`, { signal: controller.signal })
-      .then(async (res) => {
-        const data = (await res.json()) as { bases?: NtripBase[]; error?: string };
-        if (!res.ok) throw new Error(data.error ?? "Erro ao carregar bases");
-        setBases(data.bases ?? []);
-      })
-      .catch((err) => {
-        if (controller.signal.aborted) return;
-        setBases([]);
-        setBasesError(err instanceof Error ? err.message : "Erro ao carregar bases");
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setBasesLoading(false);
-      });
+        fetch(`/api/rtk-validation/ntrip-bases?${params}`, { signal: controller.signal })
+          .then(async (res) => {
+            const data = (await res.json()) as { bases?: NtripBase[]; error?: string };
+            if (!res.ok) throw new Error(data.error ?? "Erro ao carregar bases");
+            setBases(data.bases ?? []);
+          })
+          .catch((err) => {
+            if (controller.signal.aborted) return;
+            setBases([]);
+            setBasesError(err instanceof Error ? err.message : "Erro ao carregar bases");
+          })
+          .finally(() => {
+            if (!controller.signal.aborted) setBasesLoading(false);
+          });
 
-    return () => controller.abort();
-  }, [ntripServer, ntripPort, center.lat, center.lon, surveyEn.length]);
+        return () => controller.abort();
+      }),
+    [ntripServer, ntripPort, center.lat, center.lon, surveyEn.length],
+  );
 
   const all = [
     ...surveyEn,

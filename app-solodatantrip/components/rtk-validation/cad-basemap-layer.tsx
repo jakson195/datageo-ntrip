@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { runQueuedInEffect } from "@/lib/react/queue-in-effect";
 import { useTranslations } from "next-intl";
 import { worldToScreen, type CadViewport } from "@/lib/rtk-validation/cad/viewport";
 import {
@@ -149,22 +150,26 @@ export function CadBasemapLayer({ viewport, entities, overlays, crs, georef: geo
 
   const anmActive = anyAnmSigmineOverlay(overlays.anmSigmine);
 
-  useEffect(() => {
-    if (!anmActive && !overlays.satellite) return;
-    if (anmActive) setAnmFailed(null);
-    if (overlays.satellite) setSatelliteFailed(false);
-  }, [
-    overlays.anmSigmine.processos,
-    overlays.anmSigmine.protecaoFonte,
-    overlays.anmSigmine.arrendamentos,
-    overlays.anmSigmine.bloqueio,
-    overlays.anmSigmine.reservasGarimpeiras,
-    overlays.satellite,
-    viewport.minX,
-    viewport.maxX,
-    viewport.minY,
-    viewport.maxY,
-  ]);
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (!anmActive && !overlays.satellite) return;
+        if (anmActive) setAnmFailed(null);
+        if (overlays.satellite) setSatelliteFailed(false);
+      }),
+    [
+      overlays.anmSigmine.processos,
+      overlays.anmSigmine.protecaoFonte,
+      overlays.anmSigmine.arrendamentos,
+      overlays.anmSigmine.bloqueio,
+      overlays.anmSigmine.reservasGarimpeiras,
+      overlays.satellite,
+      viewport.minX,
+      viewport.maxX,
+      viewport.minY,
+      viewport.maxY,
+    ],
+  );
 
   const georef = useMemo(
     () => georefProp ?? detectCadGeoref(entities, viewport, crs),
@@ -192,67 +197,71 @@ export function CadBasemapLayer({ viewport, entities, overlays, crs, georef: geo
     return buildMapUrl(ANM_OVERLAY.apiPath, bboxStr, w, h, { layers: anmLayerIds.join(",") });
   }, [overlays.anmSigmine, viewport, georef, anmActive, anmBboxIssue]);
 
-  useEffect(() => {
-    if (!anmMapUrl || !anmActive || !georef.isGeoreferenced) {
-      setAnmImageUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return null;
-      });
-      return;
-    }
-
-    let cancelled = false;
-    setAnmFailed(null);
-
-    void fetch(anmMapUrl)
-      .then(async (res) => {
-        if (cancelled) return;
-        if (res.status === 404) {
-          setAnmFailed("empty");
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (!anmMapUrl || !anmActive || !georef.isGeoreferenced) {
           setAnmImageUrl((prev) => {
             if (prev) URL.revokeObjectURL(prev);
             return null;
           });
           return;
         }
-        if (res.status === 400) {
-          setAnmFailed("outOfBrazil");
-          setAnmImageUrl((prev) => {
-            if (prev) URL.revokeObjectURL(prev);
-            return null;
-          });
-          return;
-        }
-        if (!res.ok) {
-          setAnmFailed("error");
-          setAnmImageUrl((prev) => {
-            if (prev) URL.revokeObjectURL(prev);
-            return null;
-          });
-          return;
-        }
-        const blob = await res.blob();
-        if (cancelled) return;
-        const objectUrl = URL.createObjectURL(blob);
-        setAnmImageUrl((prev) => {
-          if (prev) URL.revokeObjectURL(prev);
-          return objectUrl;
-        });
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setAnmFailed("error");
-          setAnmImageUrl((prev) => {
-            if (prev) URL.revokeObjectURL(prev);
-            return null;
-          });
-        }
-      });
 
-    return () => {
-      cancelled = true;
-    };
-  }, [anmMapUrl, anmActive, georef.isGeoreferenced]);
+        let cancelled = false;
+        setAnmFailed(null);
+
+        void fetch(anmMapUrl)
+          .then(async (res) => {
+            if (cancelled) return;
+            if (res.status === 404) {
+              setAnmFailed("empty");
+              setAnmImageUrl((prev) => {
+                if (prev) URL.revokeObjectURL(prev);
+                return null;
+              });
+              return;
+            }
+            if (res.status === 400) {
+              setAnmFailed("outOfBrazil");
+              setAnmImageUrl((prev) => {
+                if (prev) URL.revokeObjectURL(prev);
+                return null;
+              });
+              return;
+            }
+            if (!res.ok) {
+              setAnmFailed("error");
+              setAnmImageUrl((prev) => {
+                if (prev) URL.revokeObjectURL(prev);
+                return null;
+              });
+              return;
+            }
+            const blob = await res.blob();
+            if (cancelled) return;
+            const objectUrl = URL.createObjectURL(blob);
+            setAnmImageUrl((prev) => {
+              if (prev) URL.revokeObjectURL(prev);
+              return objectUrl;
+            });
+          })
+          .catch(() => {
+            if (!cancelled) {
+              setAnmFailed("error");
+              setAnmImageUrl((prev) => {
+                if (prev) URL.revokeObjectURL(prev);
+                return null;
+              });
+            }
+          });
+
+        return () => {
+          cancelled = true;
+        };
+      }),
+    [anmMapUrl, anmActive, georef.isGeoreferenced],
+  );
 
   useEffect(
     () => () => {

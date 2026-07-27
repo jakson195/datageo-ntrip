@@ -7,6 +7,7 @@ import { PaymentMethodsPanel } from "@/components/billing/payment-methods-panel"
 import { CopyField } from "@/components/dashboard/copy-field";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
+import { runQueuedInEffect } from "@/lib/react/queue-in-effect";
 
 import { createRtkLicenseAction } from "@/lib/rtk/actions";
 
@@ -176,23 +177,17 @@ export function SubscriptionWorkspace() {
 
 
 
-  useEffect(() => {
+  useEffect(() => runQueuedInEffect(() => void load()), [load]);
 
-    load();
-
-  }, [load]);
-
-
-
-  useEffect(() => {
-
-    if (overview?.canPay && overview.planSlug) {
-
-      setSelectedPlan(overview.planSlug);
-
-    }
-
-  }, [overview?.canPay, overview?.planSlug]);
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (overview?.canPay && overview.planSlug) {
+          setSelectedPlan(overview.planSlug);
+        }
+      }),
+    [overview?.canPay, overview?.planSlug],
+  );
 
 
 

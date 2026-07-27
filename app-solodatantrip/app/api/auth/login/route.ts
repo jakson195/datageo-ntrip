@@ -36,6 +36,10 @@ export async function POST(request: Request) {
     return res;
   } catch (err) {
     console.error("[auth/login]", err);
-    return NextResponse.json({ error: "Falha no login." }, { status: 500 });
+    const message =
+      err instanceof Error && err.message.trim()
+        ? err.message
+        : "Falha no login.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

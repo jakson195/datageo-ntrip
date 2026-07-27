@@ -39,19 +39,26 @@ export function decryptRtkSecret(stored: string): string {
   const [ivHex, tagHex, dataHex] = payload.split(":");
   if (!ivHex || !tagHex || !dataHex) return stored;
 
-  const decipher = createDecipheriv(
-    ALGO,
-    getEncryptionKey(),
-    Buffer.from(ivHex, "hex"),
-  );
-  decipher.setAuthTag(Buffer.from(tagHex, "hex"));
+  try {
+    const decipher = createDecipheriv(
+      ALGO,
+      getEncryptionKey(),
+      Buffer.from(ivHex, "hex"),
+    );
+    decipher.setAuthTag(Buffer.from(tagHex, "hex"));
 
-  const decrypted = Buffer.concat([
-    decipher.update(Buffer.from(dataHex, "hex")),
-    decipher.final(),
-  ]);
+    const decrypted = Buffer.concat([
+      decipher.update(Buffer.from(dataHex, "hex")),
+      decipher.final(),
+    ]);
 
-  return decrypted.toString("utf8");
+    return decrypted.toString("utf8");
+  } catch {
+    console.warn(
+      "[rtk/crypto] Não foi possível descriptografar credencial RTK (chave alterada ou dado inválido).",
+    );
+    return "NONE";
+  }
 }
 
 /** Exibe os 4 primeiros caracteres + bullets: abcd•••••• */

@@ -58,7 +58,7 @@ export function formatAreaBr(m2: number): string {
 /** Azimute DMS com segundos inteiros (ex.: 99°28'13"). */
 export function formatAzimuthDmsInt(degrees: number): string {
   let d = Math.floor(degrees);
-  let mFloat = (degrees - d) * 60;
+  const mFloat = (degrees - d) * 60;
   let m = Math.floor(mFloat);
   let s = Math.round((mFloat - m) * 60);
   if (s >= 60) {

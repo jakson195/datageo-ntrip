@@ -18,10 +18,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      message:
-        "Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha em alguns minutos.",
+      message: result.devResetUrl
+        ? "Ambiente local: use o link abaixo para redefinir sua senha (válido por 1 hora)."
+        : "Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha em alguns minutos.",
+      devResetUrl: result.devResetUrl,
     });
-  } catch {
+  } catch (err) {
+    console.error("[auth/forgot-password]", err);
     return NextResponse.json({ error: "Não foi possível processar o pedido." }, { status: 500 });
   }
 }

@@ -68,7 +68,7 @@ export async function checkRateLimit(
     };
   }
 
-  let store = pruneStore(await readStore(), now);
+  const store = pruneStore(await readStore(), now);
   let bucket = store[key];
 
   if (!bucket || bucket.resetAt <= now) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { runQueuedInEffect } from "@/lib/react/queue-in-effect";
 
 interface AdminSubscriptionRow {
   id: string;
@@ -54,9 +55,7 @@ export default function AdminSubscriptionsPage() {
     }
   }, [filter]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => runQueuedInEffect(() => void load()), [load]);
 
   async function activate(userId: string, plan: string) {
     setActivatingId(userId);

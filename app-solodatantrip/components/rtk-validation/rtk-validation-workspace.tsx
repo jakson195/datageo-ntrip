@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { runQueuedInEffect } from "@/lib/react/queue-in-effect";
 import { useTranslations } from "next-intl";
 import type { SessionUser } from "@/lib/auth";
 import { useRouter } from "@/i18n/navigation";
@@ -100,23 +101,27 @@ export function RtkValidationWorkspace({ user }: { user: SessionUser }) {
     if (result.points.length > 0) setTab("control");
   }, []);
 
-  useEffect(() => {
-    setControlPoints((prev) =>
-      prev.map((cp) => {
-        if (cp.source !== "imported" || !cp.linkedSurveyPointId) return cp;
-        const pt = surveyPoints.find((p) => p.id === cp.linkedSurveyPointId);
-        if (!pt) return cp;
-        return {
-          ...cp,
-          observedCode: pt.code?.trim() || pt.name,
-          observedDescription: pt.description?.trim() || "",
-          eObserved: pt.e,
-          nObserved: pt.n,
-          zObserved: pt.z,
-        };
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        setControlPoints((prev) =>
+          prev.map((cp) => {
+            if (cp.source !== "imported" || !cp.linkedSurveyPointId) return cp;
+            const pt = surveyPoints.find((p) => p.id === cp.linkedSurveyPointId);
+            if (!pt) return cp;
+            return {
+              ...cp,
+              observedCode: pt.code?.trim() || pt.name,
+              observedDescription: pt.description?.trim() || "",
+              eObserved: pt.e,
+              nObserved: pt.n,
+              zObserved: pt.z,
+            };
+          }),
+        );
       }),
-    );
-  }, [surveyPoints]);
+    [surveyPoints],
+  );
 
   const runAdjust = () => {
     const result = runAdjustment(surveyPoints, controlPoints, method);
@@ -205,9 +210,7 @@ export function RtkValidationWorkspace({ user }: { user: SessionUser }) {
     }
   }, []);
 
-  useEffect(() => {
-    void loadSavedProjects();
-  }, [loadSavedProjects]);
+  useEffect(() => runQueuedInEffect(() => void loadSavedProjects()), [loadSavedProjects]);
 
   useEffect(() => {
     if (!projectNotice) return;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { runQueuedInEffect } from "@/lib/react/queue-in-effect";
 import { useTranslations } from "next-intl";
 import type { CadEntity, CadPointEntity } from "@/lib/rtk-validation/cad/types";
 
@@ -36,9 +37,7 @@ function EditableTextCell({
 }) {
   const [draft, setDraft] = useState(value);
 
-  useEffect(() => {
-    setDraft(value);
-  }, [value]);
+  useEffect(() => runQueuedInEffect(() => setDraft(value)), [value]);
 
   const commit = () => {
     const trimmed = draft.trim();
@@ -77,9 +76,7 @@ function EditableNumberCell({
   const formatted = value.toFixed(decimals);
   const [draft, setDraft] = useState(formatted);
 
-  useEffect(() => {
-    setDraft(value.toFixed(decimals));
-  }, [value, decimals]);
+  useEffect(() => runQueuedInEffect(() => setDraft(value.toFixed(decimals))), [value, decimals]);
 
   const commit = () => {
     const parsed = parseCoord(draft);

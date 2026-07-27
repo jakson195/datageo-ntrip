@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { SessionUser } from "@/lib/auth";
@@ -109,9 +110,9 @@ export function RtkCredentialsPanel({ user }: { user: SessionUser }) {
             Seu cadastro foi concluído. Assim que a assinatura for ativada, usuário e senha RTK
             aparecerão aqui. Enquanto isso, use os dados do servidor abaixo para preparar o
             equipamento ou{" "}
-            <a href="/#contato" className="font-medium text-[#1d6ecf] underline">
+            <Link href="/#contato" className="font-medium text-[#1d6ecf] underline">
               fale com o suporte
-            </a>
+            </Link>
             .
           </p>
         </div>

@@ -297,6 +297,11 @@ export function CadAiChat({
     sessionStorage.removeItem(historyStorageKey(project));
   };
 
+  const handleImportKml = useCallback(() => {
+    fileRef.current?.click();
+    setInput(t("quick.importKmlCmd"));
+  }, [t]);
+
   const quickActions = [
     {
       label: t("quick.area"),
@@ -317,7 +322,6 @@ export function CadAiChat({
     { label: t("quick.text"), run: () => runDirect({ acao: "inserir_texto", texto: "Lote 01", resposta: "" }, t("quick.text")) },
     { label: t("quick.measure"), run: () => runDirect({ acao: "medir", resposta: "" }, t("quick.measure")) },
     { label: t("quick.pointId"), run: () => runDirect({ acao: "renumerar_pontos", resposta: "" }, t("quick.pointId")) },
-    { label: t("quick.importKml"), run: () => { fileRef.current?.click(); setInput(t("quick.importKmlCmd")); } },
     { label: t("quick.exportKml"), run: () => runDirect({ acao: "exportar", formato: "kml", resposta: "" }, t("quick.exportKml")) },
     { label: t("quick.exportKmz"), run: () => runDirect({ acao: "exportar", formato: "kmz", resposta: "" }, t("quick.exportKmz")) },
     { label: t("quick.tin"), run: () => runDirect({ acao: "triangulacao", resposta: "" }, t("quick.tin")) },
@@ -485,6 +489,14 @@ export function CadAiChat({
               {action.label}
             </button>
           ))}
+          <button
+            type="button"
+            disabled={processing}
+            onClick={handleImportKml}
+            className="rounded-full border border-[#334155] bg-[#1a1d27] px-2.5 py-1 text-[10px] text-[#94a3b8] hover:border-[#7c3aed] hover:text-[#c4b5fd] disabled:opacity-40"
+          >
+            {t("quick.importKml")}
+          </button>
         </div>
         {fileName ? (
           <p className="mb-2 truncate text-[10px] text-emerald-400">{t("fileReady", { name: fileName })}</p>

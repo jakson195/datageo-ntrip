@@ -13,6 +13,7 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "npx tsx prisma/seed.ts",
     "db:reset-signups": "npx tsx scripts/reset-signups.ts",
+    "db:reset-password": "npx tsx scripts/reset-user-password.ts",
     "test:billing-pix": "npx tsx scripts/test-billing-pix.ts",
     "db:studio": "prisma studio",
     "vercel:setup": "node scripts/setup-vercel.mjs"

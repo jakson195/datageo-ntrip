@@ -16,12 +16,10 @@ function getSpeechRecognition(): SpeechRecognitionCtor | null {
 export function useCadSpeech(lang = "pt-BR") {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
-  const [speechSupported, setSpeechSupported] = useState(false);
+  const [speechSupported] = useState(() =>
+    typeof window !== "undefined" ? Boolean(getSpeechRecognition()) : false,
+  );
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-
-  useEffect(() => {
-    setSpeechSupported(Boolean(getSpeechRecognition()));
-  }, []);
 
   const stopListening = useCallback(() => {
     recognitionRef.current?.stop();

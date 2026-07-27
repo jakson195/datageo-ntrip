@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { runQueuedInEffect } from "@/lib/react/queue-in-effect";
 import { useTranslations } from "next-intl";
 import type { ControlPointInput, ControlPointWithStats, SurveyPoint } from "@/lib/rtk-validation/types";
 
@@ -84,10 +85,14 @@ export function ControlPointCard({
     });
   }, [search, surveyPoints]);
 
-  useEffect(() => {
-    if (mode !== "imported" || !linkedPoint) return;
-    setSearch(pointLabel(linkedPoint));
-  }, [mode, linkedPoint?.id]);
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (mode !== "imported" || !linkedPoint) return;
+        setSearch(pointLabel(linkedPoint));
+      }),
+    [mode, linkedPoint?.id],
+  );
 
   const selectImportedPoint = (surveyPointId: string) => {
     const pt = surveyPoints.find((p) => p.id === surveyPointId);

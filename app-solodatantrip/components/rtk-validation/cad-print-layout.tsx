@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { runQueuedInEffect } from "@/lib/react/queue-in-effect";
 import { useTranslations } from "next-intl";
 import type { MemorialFormDefaults } from "@/lib/rtk-validation/cad";
 import type { CadPolylineEntity, CadProject, CadRasterOverlay } from "@/lib/rtk-validation/cad/types";
@@ -62,15 +63,19 @@ export function CadPrintLayout({ project, memorialForm, selectedPolyline, raster
     buildPrintLayerVisibility(project.layers),
   );
 
-  useEffect(() => {
-    setPrintLayerVisibility((prev) => {
-      const next: PrintLayerVisibility = {};
-      for (const layer of project.layers) {
-        next[layer.id] = layer.id in prev ? prev[layer.id] : layer.visible !== false;
-      }
-      return next;
-    });
-  }, [project.layers]);
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        setPrintLayerVisibility((prev) => {
+          const next: PrintLayerVisibility = {};
+          for (const layer of project.layers) {
+            next[layer.id] = layer.id in prev ? prev[layer.id] : layer.visible !== false;
+          }
+          return next;
+        });
+      }),
+    [project.layers],
+  );
 
   const printRasters = useMemo(
     () => rastersWithPrintLayerVisibility(rasters, printLayerVisibility),
@@ -81,29 +86,33 @@ export function CadPrintLayout({ project, memorialForm, selectedPolyline, raster
     setLayout((prev) => ({ ...prev, ...patch }));
   }, []);
 
-  useEffect(() => {
-    setLayout((prev) => ({
-      ...prev,
-      projeto: project.name,
-      titulo: prev.titulo || selectedPolyline?.name || "PLANTA TOPOGRÁFICA GEORREFERENCIADA",
-      empresa: prev.empresa || memorialForm.lawFirmName || "DATAGEO NTRIP",
-      desenhista: prev.desenhista || memorialForm.technicalName,
-      proprietario: prev.proprietario || memorialForm.owner || "",
-      local:
-        prev.local ||
-        (memorialForm.municipality && memorialForm.state
-          ? `${memorialForm.municipality} - ${memorialForm.state}`
-          : memorialForm.municipality || memorialForm.state || ""),
-    }));
-  }, [
-    project.name,
-    selectedPolyline?.name,
-    memorialForm.lawFirmName,
-    memorialForm.technicalName,
-    memorialForm.owner,
-    memorialForm.municipality,
-    memorialForm.state,
-  ]);
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        setLayout((prev) => ({
+          ...prev,
+          projeto: project.name,
+          titulo: prev.titulo || selectedPolyline?.name || "PLANTA TOPOGRÁFICA GEORREFERENCIADA",
+          empresa: prev.empresa || memorialForm.lawFirmName || "DATAGEO NTRIP",
+          desenhista: prev.desenhista || memorialForm.technicalName,
+          proprietario: prev.proprietario || memorialForm.owner || "",
+          local:
+            prev.local ||
+            (memorialForm.municipality && memorialForm.state
+              ? `${memorialForm.municipality} - ${memorialForm.state}`
+              : memorialForm.municipality || memorialForm.state || ""),
+        }));
+      }),
+    [
+      project.name,
+      selectedPolyline?.name,
+      memorialForm.lawFirmName,
+      memorialForm.technicalName,
+      memorialForm.owner,
+      memorialForm.municipality,
+      memorialForm.state,
+    ],
+  );
 
   const sheet = useMemo(
     () => sheetDimensions(layout.formato, layout.orientacao),
@@ -182,11 +191,15 @@ export function CadPrintLayout({ project, memorialForm, selectedPolyline, raster
     setLocationMapStatus(status);
   }, []);
 
-  useEffect(() => {
-    if (sheetLayout.supplementaryW <= 0) {
-      handleLocationMapStatusChange("idle");
-    }
-  }, [sheetLayout.supplementaryW, handleLocationMapStatusChange]);
+  useEffect(
+    () =>
+      runQueuedInEffect(() => {
+        if (sheetLayout.supplementaryW <= 0) {
+          handleLocationMapStatusChange("idle");
+        }
+      }),
+    [sheetLayout.supplementaryW, handleLocationMapStatusChange],
+  );
 
   const handlePrint = useCallback(async () => {
     setEditTextMode(false);
